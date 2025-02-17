@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { TranscriptViewer } from "@/components/transcript-viewer";
+import { NotesEditor } from "@/components/notes-editor";
 
 function HomePage() {
   const [url, setUrl] = useState("");
@@ -20,8 +21,8 @@ function HomePage() {
   };
 
   return (
-    <div className="container mx-auto max-w-4xl py-8">
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="container mx-auto py-8">
+      <form onSubmit={handleSubmit} className="mb-8 space-y-4">
         <div className="flex gap-2">
           <Input
             type="url"
@@ -36,20 +37,32 @@ function HomePage() {
         </div>
       </form>
 
-      {data?.videoId && (
-        <Card className="mt-4 p-4">
-          <iframe
-            width="100%"
-            height="315"
-            src={`https://www.youtube.com/embed/${data.videoId}`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="rounded-lg"
-          />
-        </Card>
-      )}
+      <div className="grid grid-cols-2 gap-8">
+        {/* Left Column: Video and Transcript */}
+        <div className="space-y-4">
+          {data?.videoId && (
+            <Card className="p-4">
+              <iframe
+                width="100%"
+                height="315"
+                src={`https://www.youtube-nocookie.com/embed/${data.videoId}`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="rounded-lg"
+              />
+            </Card>
+          )}
 
-      {data?.transcript && <TranscriptViewer transcript={data.transcript} />}
+          {data?.transcript && (
+            <TranscriptViewer transcript={data.transcript} />
+          )}
+        </div>
+
+        {/* Right Column: Notes Editor */}
+        <div className="h-full">
+          <NotesEditor />
+        </div>
+      </div>
     </div>
   );
 }
