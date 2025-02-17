@@ -7,7 +7,7 @@ import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import TextStyle from "@tiptap/extension-text-style";
 import FontFamily from "@tiptap/extension-font-family";
-import FontSize from "@tiptap/extension-font-size";
+import FontSize from "tiptap-extension-font-size";
 import {
   Bold,
   Italic,

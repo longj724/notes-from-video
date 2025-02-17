@@ -6,6 +6,7 @@ import { ChevronUp, ChevronDown, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type Transcript = {
   text: string;
@@ -21,9 +22,13 @@ interface TranscriptViewerProps {
     isMatch?: boolean;
     matchCount?: number;
   }[];
+  onAddNote?: (text: string, timestamp: number) => void;
 }
 
-export function TranscriptViewer({ transcript }: TranscriptViewerProps) {
+export function TranscriptViewer({
+  transcript,
+  onAddNote,
+}: TranscriptViewerProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentMatch, setCurrentMatch] = useState(0);
   const transcriptRef = useRef<HTMLDivElement>(null);
@@ -75,6 +80,12 @@ export function TranscriptViewer({ transcript }: TranscriptViewerProps) {
   const clearSearch = () => {
     setSearchQuery("");
     setCurrentMatch(0);
+  };
+
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
   return (
@@ -133,36 +144,42 @@ export function TranscriptViewer({ transcript }: TranscriptViewerProps) {
         className="max-h-[500px] space-y-2 overflow-y-auto p-4"
         ref={transcriptRef}
       >
-        {highlightedTranscript
-          .filter(({ text }) => text.trim().length !== 0)
-          .map((segment, index) => (
-            <div
-              key={index}
-              className={`rounded p-2 ${
-                segment.isMatch ? "bg-yellow-50 dark:bg-yellow-900/20" : ""
-              }`}
-            >
-              <p
-                dangerouslySetInnerHTML={{
-                  __html: decodeHTMLEntities(segment.text),
-                }}
-                className="leading-relaxed"
-              />
-              <span className="text-muted-foreground text-sm">
-                {formatTimestamp(Math.round(segment.offset))}
-              </span>
-            </div>
-          ))}
+        <ScrollArea className="h-[400px]">
+          {highlightedTranscript
+            .filter(({ text }) => text.trim().length !== 0)
+            .map((segment, index) => (
+              <div
+                key={index}
+                className={`group mb-4 flex items-center gap-2 ${
+                  segment.isMatch ? "bg-yellow-50 dark:bg-yellow-900/20" : ""
+                }`}
+              >
+                <span className="text-muted-foreground text-sm">
+                  {formatTime(Math.round(segment.offset))}
+                </span>
+                <p
+                  className="flex-1 leading-relaxed"
+                  dangerouslySetInnerHTML={{
+                    __html: decodeHTMLEntities(segment.text),
+                  }}
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="opacity-0 group-hover:opacity-100"
+                  onClick={() =>
+                    onAddNote?.(segment.text, Math.round(segment.offset))
+                  }
+                >
+                  Add note
+                </Button>
+              </div>
+            ))}
+        </ScrollArea>
       </Card>
     </div>
   );
 }
-
-const formatTimestamp = (seconds: number): string => {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = Math.floor(seconds % 60);
-  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
-};
 
 const decodeHTMLEntities = (text: string): string => {
   text = text.replace(/&amp;/g, "&");
