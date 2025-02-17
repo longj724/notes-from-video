@@ -20,7 +20,7 @@ function HomePage() {
   };
 
   return (
-    <div className="container mx-auto max-w-3xl py-8">
+    <div className="container mx-auto max-w-4xl py-8">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex gap-2">
           <Input
