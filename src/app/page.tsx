@@ -1,7 +1,7 @@
 "use client";
 
 // External Dependencies
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 // Internal Dependencies
 import { useTranscript } from "@/hooks/use-get-transcriptions";
@@ -9,15 +9,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { TranscriptViewer } from "@/components/transcript-viewer";
-import { NotesEditor } from "@/components/notes-editor";
+import { NotesEditor, NotesEditorRef } from "@/components/notes-editor";
+import { YouTubePlayer, YouTubePlayerRef } from "@/components/youtube-player";
 
 function HomePage() {
   const [url, setUrl] = useState("");
   const { mutate: fetchTranscript, data, isPending } = useTranscript();
+  const playerRef = useRef<YouTubePlayerRef>(null);
+  const editorRef = useRef<NotesEditorRef>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     fetchTranscript({ url });
+  };
+
+  const handleAddNote = (text: string, timestamp: number) => {
+    editorRef.current?.insertTextWithTimestamp(text, timestamp);
+  };
+
+  const handleTimestampClick = (seconds: number) => {
+    playerRef.current?.seekTo(seconds);
   };
 
   return (
@@ -42,25 +53,24 @@ function HomePage() {
         <div className="space-y-4">
           {data?.videoId && (
             <Card className="p-4">
-              <iframe
-                width="100%"
-                height="315"
-                src={`https://www.youtube-nocookie.com/embed/${data.videoId}`}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="rounded-lg"
-              />
+              <YouTubePlayer ref={playerRef} videoId={data.videoId} />
             </Card>
           )}
 
           {data?.transcript && (
-            <TranscriptViewer transcript={data.transcript} />
+            <TranscriptViewer
+              transcript={data.transcript}
+              onAddNote={handleAddNote}
+            />
           )}
         </div>
 
         {/* Right Column: Notes Editor */}
         <div className="h-full">
-          <NotesEditor />
+          <NotesEditor
+            ref={editorRef}
+            onTimestampClick={handleTimestampClick}
+          />
         </div>
       </div>
     </div>

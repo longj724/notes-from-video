@@ -168,7 +168,10 @@ export function TranscriptViewer({
                   size="sm"
                   className="opacity-0 group-hover:opacity-100"
                   onClick={() =>
-                    onAddNote?.(segment.text, Math.round(segment.offset))
+                    onAddNote?.(
+                      decodeHTMLEntities(segment.text),
+                      Math.round(segment.offset),
+                    )
                   }
                 >
                   Add note
