@@ -84,6 +84,7 @@ function HomePage() {
             <TranscriptViewer
               transcript={transcriptionData.transcript}
               onAddNote={handleAddNote}
+              onTimeClick={handleTimestampClick}
             />
           )}
         </div>

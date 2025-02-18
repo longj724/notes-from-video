@@ -23,11 +23,13 @@ interface TranscriptViewerProps {
     matchCount?: number;
   }[];
   onAddNote?: (text: string, timestamp: number) => void;
+  onTimeClick?: (timestamp: number) => void;
 }
 
 export function TranscriptViewer({
   transcript,
   onAddNote,
+  onTimeClick,
 }: TranscriptViewerProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentMatch, setCurrentMatch] = useState(0);
@@ -158,10 +160,11 @@ export function TranscriptViewer({
                   {formatTime(Math.round(segment.offset))}
                 </span>
                 <p
-                  className="flex-1 leading-relaxed"
+                  className="hover:text-primary flex-1 cursor-pointer leading-relaxed"
                   dangerouslySetInnerHTML={{
                     __html: decodeHTMLEntities(segment.text),
                   }}
+                  onClick={() => onTimeClick?.(Math.round(segment.offset))}
                 />
                 <Button
                   variant="ghost"
