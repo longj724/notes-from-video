@@ -112,7 +112,7 @@ function HomePage() {
                   <div className="space-y-4">
                     <Button
                       onClick={handleGenerateSummary}
-                      disabled={isSummaryPending}
+                      disabled={isSummaryPending || summaryData !== undefined}
                       className="w-full"
                     >
                       {isSummaryPending
