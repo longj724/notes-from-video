@@ -1,7 +1,7 @@
 "use client";
 
 // External Dependencies
-import { useState, useRef, useImperativeHandle, forwardRef } from "react";
+import { forwardRef, useImperativeHandle } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -9,6 +9,7 @@ import TextAlign from "@tiptap/extension-text-align";
 import TextStyle from "@tiptap/extension-text-style";
 import FontFamily from "@tiptap/extension-font-family";
 import FontSize from "tiptap-extension-font-size";
+import { Extension } from "@tiptap/core";
 import {
   Bold,
   Italic,
@@ -19,7 +20,6 @@ import {
   List,
   ListOrdered,
 } from "lucide-react";
-import { Extension } from "@tiptap/core";
 
 // Internal Dependencies
 import { Card } from "./ui/card";
@@ -32,7 +32,6 @@ import {
 } from "./ui/select";
 import { Toggle } from "./ui/toggle";
 import { Timestamp } from "./extensions/timestamp";
-import { YouTubePlayerRef } from "./youtube-player";
 
 // Create a custom extension for tab support
 const TabKeyExtension = Extension.create({
@@ -91,6 +90,7 @@ type FontFamily = (typeof fontFamilies)[number]["value"];
 
 export interface NotesEditorRef {
   insertTextWithTimestamp: (text: string, timestamp: number) => void;
+  getContent: () => string;
 }
 
 interface NotesEditorProps {
@@ -98,7 +98,7 @@ interface NotesEditorProps {
 }
 
 export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
-  ({ onTimestampClick }, ref) => {
+  function NotesEditor({ onTimestampClick }, ref) {
     const editor = useEditor({
       extensions: [
         StarterKit.configure({
@@ -141,7 +141,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
       editorProps: {
         attributes: {
           class:
-            "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-[500px] p-4",
+            "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none",
         },
       },
     });
@@ -160,6 +160,9 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
             .insertContent(text)
             .run();
         }
+      },
+      getContent: () => {
+        return editor?.getHTML() ?? "";
       },
     }));
 
@@ -311,7 +314,10 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
           </div>
         </div>
 
-        <EditorContent editor={editor} className="focus:outline-none" />
+        <EditorContent
+          editor={editor}
+          className="min-h-[500px] focus:outline-none"
+        />
       </Card>
     );
   },

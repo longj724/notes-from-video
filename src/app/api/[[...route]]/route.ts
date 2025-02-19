@@ -5,6 +5,8 @@ import { handle } from "hono/vercel";
 
 // Internal Dependencies
 import transcriptions from "./transcriptions";
+import folders from "./folders";
+import notes from "./notes";
 
 export const runtime = "nodejs";
 
@@ -28,10 +30,14 @@ app.use(
   }),
 );
 
-const routes = app.route("/transcriptions", transcriptions);
+const routes = app
+  .route("/transcriptions", transcriptions)
+  .route("/folders", folders)
+  .route("/notes", notes);
 
 export const GET = handle(app);
 export const POST = handle(app);
+export const PUT = handle(app);
 export const DELETE = handle(app);
 
 export type AppType = typeof routes;

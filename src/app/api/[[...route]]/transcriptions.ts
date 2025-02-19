@@ -54,7 +54,7 @@ const app = new Hono()
 
       const result = await model.generateContent(prompt);
       console.log("result", result);
-      const response = await result.response;
+      const response = result.response;
       const summary = response.text();
 
       return c.json({ summary });
