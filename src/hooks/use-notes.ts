@@ -95,11 +95,15 @@ export function useCreateNote() {
   });
 }
 
-export function useUpdateNote(id: string) {
+export function useUpdateNote() {
   const queryClient = useQueryClient();
 
-  return useMutation<UpdateNotesResponseType, Error, UpdateNotesRequestType>({
-    mutationFn: async (json) => {
+  return useMutation<
+    UpdateNotesResponseType,
+    Error,
+    { id: string } & UpdateNotesRequestType
+  >({
+    mutationFn: async ({ id, ...json }) => {
       const response = await client.api.notes[":id"].$put({
         json,
         param: { id },

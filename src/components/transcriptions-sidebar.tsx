@@ -1,7 +1,7 @@
 "use client";
 
 // External Dependencies
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   FolderPlus,
   Plus,
@@ -53,6 +53,10 @@ export function TranscriptionsSidebar({
   const [newFolderName, setNewFolderName] = useState("");
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [localFolders, setLocalFolders] = useState(folders);
+
+  useEffect(() => {
+    setLocalFolders(folders);
+  }, [folders]);
 
   const toggleFolder = (folderId: string) => {
     setLocalFolders((prev) =>

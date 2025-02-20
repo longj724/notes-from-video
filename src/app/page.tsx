@@ -4,6 +4,7 @@
 import { useState, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import type { InferSelectModel } from "drizzle-orm";
 
 // Internal Dependencies
 import { useGetTranscript } from "@/hooks/use-get-transcriptions";
@@ -19,10 +20,14 @@ import { TranscriptViewer } from "@/components/transcript-viewer";
 import { NotesEditor, NotesEditorRef } from "@/components/notes-editor";
 import { YouTubePlayer, YouTubePlayerRef } from "@/components/youtube-player";
 import { TranscriptionsSidebar } from "@/components/transcriptions-sidebar";
+import { folders, notes } from "@/server/db/schema";
 import type {
   TranscriptionItem,
   FolderItem,
 } from "@/components/transcriptions-sidebar";
+
+type Folder = InferSelectModel<typeof folders>;
+type Note = InferSelectModel<typeof notes>;
 
 function extractVideoId(url: string): string {
   const regex =
@@ -44,7 +49,7 @@ function HomePage() {
     data: summaryData,
     isPending: isSummaryPending,
   } = useGenerateSummary();
-  const { data: folders } = useGetFolders();
+  const { data: folders = [] } = useGetFolders();
   const { data: notes = [] } = useNotes();
   const { mutate: createFolder } = useCreateFolder();
   const { mutate: updateNote } = useUpdateNote();
@@ -72,7 +77,6 @@ function HomePage() {
   };
 
   const handleCreateFolder = (name: string) => {
-    console.log("Creating folder:", name);
     createFolder({ name });
   };
 
@@ -105,31 +109,27 @@ function HomePage() {
   const handleMoveToFolder = (transcriptionId: string, folderId: string) => {
     updateNote({
       id: transcriptionId,
-      data: {
-        folderId,
-      },
+      folderId,
     });
   };
 
-  console.log("folders", folders);
-  console.log("notes", notes);
+  const transformedFolders: FolderItem[] = (folders as Folder[]).map(
+    (folder) => ({
+      id: folder.id,
+      name: folder.name,
+      transcriptions: (notes as Note[])
+        .filter((note) => note.folderId === folder.id)
+        .map((note) => ({
+          id: note.id,
+          title: note.title,
+          videoId: extractVideoId(note.videoUrl),
+          createdAt: new Date(note.createdAt),
+        })),
+      isOpen: false,
+    }),
+  );
 
-  // Transform notes and folders into the format expected by TranscriptionsSidebar
-  const transformedFolders: FolderItem[] = folders?.map((folder) => ({
-    id: folder.id,
-    name: folder.name,
-    transcriptions: notes
-      .filter((note) => note.folderId === folder.id)
-      .map((note) => ({
-        id: note.id,
-        title: note.title,
-        videoId: extractVideoId(note.videoUrl),
-        createdAt: new Date(note.createdAt),
-      })),
-    isOpen: false,
-  }));
-
-  const unorganizedTranscriptions: TranscriptionItem[] = notes
+  const unorganizedTranscriptions: TranscriptionItem[] = (notes as Note[])
     .filter((note) => !note.folderId)
     .map((note) => ({
       id: note.id,

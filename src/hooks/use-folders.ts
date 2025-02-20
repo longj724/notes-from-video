@@ -1,9 +1,11 @@
 // External Dependencies
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { InferResponseType, InferRequestType } from "hono";
+import type { InferSelectModel } from "drizzle-orm";
 
 // Internal Dependencies
 import { client } from "@/lib/hono";
+import { folders } from "@/server/db/schema";
 
 type CreateFolderRequestType = InferRequestType<
   (typeof client.api.folders)["$post"]
@@ -18,10 +20,14 @@ type GetFoldersRequestType = InferRequestType<
   (typeof client.api.folders)["$get"]
 >;
 
-type GetFoldersResponseType = InferResponseType<
-  (typeof client.api.folders)["$get"],
-  200
->;
+type GetFoldersResponseType = InferSelectModel<typeof folders>[];
+
+type APIFolderResponse = {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string | null;
+};
 
 type UpdateFolderRequestType = InferRequestType<
   (typeof client.api.folders)[":id"]["$put"]
@@ -42,16 +48,21 @@ type DeleteFolderResponseType = InferResponseType<
 >;
 
 export function useGetFolders() {
-  return useQuery<GetFoldersResponseType, Error, GetFoldersRequestType>({
+  return useQuery<GetFoldersResponseType>({
     queryKey: ["folders"],
     queryFn: async () => {
       const response = await client.api.folders.$get();
 
       if (!response.ok) {
-        throw new Error("Failed to fetch transcript");
+        throw new Error("Failed to fetch folders");
       }
 
-      return await response.json();
+      const data = (await response.json()) as APIFolderResponse[];
+      return data.map((folder) => ({
+        ...folder,
+        createdAt: new Date(folder.createdAt),
+        updatedAt: folder.updatedAt ? new Date(folder.updatedAt) : null,
+      }));
     },
   });
 }
