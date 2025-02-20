@@ -11,7 +11,7 @@ import { useGetTranscript } from "@/hooks/use-get-transcriptions";
 import { useGenerateSummary } from "@/hooks/use-generate-summary";
 import { useGetFolders } from "@/hooks/use-folders";
 import { useNotes, useCreateNote, useUpdateNote } from "@/hooks/use-notes";
-import { useCreateFolder } from "@/hooks/use-folders";
+import { useCreateFolder, useDeleteFolder } from "@/hooks/use-folders";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -52,6 +52,7 @@ function HomePage() {
   const { data: folders = [] } = useGetFolders();
   const { data: notes = [] } = useNotes();
   const { mutate: createFolder } = useCreateFolder();
+  const { mutate: deleteFolder } = useDeleteFolder();
   const { mutate: updateNote } = useUpdateNote();
   const { mutate: createNote } = useCreateNote();
   const playerRef = useRef<YouTubePlayerRef>(null);
@@ -113,6 +114,10 @@ function HomePage() {
     });
   };
 
+  const handleDeleteFolder = (folderId: string) => {
+    deleteFolder({ id: folderId });
+  };
+
   const transformedFolders: FolderItem[] = (folders as Folder[]).map(
     (folder) => ({
       id: folder.id,
@@ -147,6 +152,7 @@ function HomePage() {
         onCreateTranscription={handleCreateTranscription}
         onTranscriptionSelect={handleTranscriptionSelect}
         onMoveToFolder={handleMoveToFolder}
+        onDeleteFolder={handleDeleteFolder}
       />
       <main className="flex-1 pl-[300px]">
         <div className="container py-8">

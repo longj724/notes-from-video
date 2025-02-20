@@ -10,6 +10,7 @@ import {
   Folder,
   PanelLeftClose,
   PanelLeft,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +18,14 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export type TranscriptionItem = {
   id: string;
@@ -39,6 +48,7 @@ type TranscriptionsSidebarProps = {
   onCreateFolder: (name: string) => void;
   onCreateTranscription: () => void;
   onMoveToFolder: (transcriptionId: string, folderId: string) => void;
+  onDeleteFolder: (folderId: string) => void;
 };
 
 export function TranscriptionsSidebar({
@@ -48,11 +58,13 @@ export function TranscriptionsSidebar({
   onCreateFolder,
   onCreateTranscription,
   onMoveToFolder,
+  onDeleteFolder,
 }: TranscriptionsSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [localFolders, setLocalFolders] = useState(folders);
+  const [folderToDelete, setFolderToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     setLocalFolders(folders);
@@ -141,7 +153,7 @@ export function TranscriptionsSidebar({
           {!isCollapsed && (
             <div className="p-2">
               {localFolders?.map((folder) => (
-                <div key={folder.id} className="mb-2">
+                <div key={folder.id} className="group relative mb-2">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -155,6 +167,17 @@ export function TranscriptionsSidebar({
                     )}
                     <Folder className="mr-2 h-4 w-4" />
                     {folder.name}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-100"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFolderToDelete(folder.id);
+                    }}
+                  >
+                    <Trash2 className="text-destructive h-4 w-4" />
                   </Button>
                   {folder.isOpen && (
                     <div className="ml-6 mt-1 space-y-1">
@@ -173,6 +196,41 @@ export function TranscriptionsSidebar({
                   )}
                 </div>
               ))}
+
+              <Dialog
+                open={!!folderToDelete}
+                onOpenChange={() => setFolderToDelete(null)}
+              >
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Delete Folder</DialogTitle>
+                    <DialogDescription>
+                      Are you sure you want to delete this folder? This action
+                      cannot be undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setFolderToDelete(null)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        if (folderToDelete) {
+                          onDeleteFolder(folderToDelete);
+                          setFolderToDelete(null);
+                        }
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
               <div className="space-y-1">
                 {transcriptions
                   .filter(
