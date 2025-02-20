@@ -1,71 +1,88 @@
 // External Dependencies
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type InferSelectModel } from "drizzle-orm";
+import { InferResponseType, InferRequestType } from "hono";
 
 // Internal Dependencies
-import { notes } from "@/server/db/schema";
+import { client } from "@/lib/hono";
 
-type Note = InferSelectModel<typeof notes>;
+type GetNotesRequestType = InferRequestType<(typeof client.api.notes)["$get"]>;
 
-interface CreateNoteData {
-  title: string;
-  content?: string;
-  videoUrl: string;
-  folderId?: string;
-}
+type GetNotesResponseType = InferResponseType<
+  (typeof client.api.notes)["$get"],
+  200
+>;
 
-interface UpdateNoteData {
-  title?: string;
-  content?: string;
-  videoUrl?: string;
-  folderId?: string | null;
-}
+type CreateNotesRequestType = InferRequestType<
+  (typeof client.api.notes)["$post"]
+>["json"];
+
+type CreateNotesResponseType = InferResponseType<
+  (typeof client.api.notes)["$post"],
+  200
+>;
+
+type UpdateNotesRequestType = InferRequestType<
+  (typeof client.api.notes)[":id"]["$put"]
+>["json"];
+
+type UpdateNotesResponseType = InferResponseType<
+  (typeof client.api.notes)[":id"]["$put"],
+  200
+>;
+
+type DeleteNotesRequestType = InferRequestType<
+  (typeof client.api.notes)[":id"]["$delete"]
+>["param"];
+
+type DeleteNotesResponseType = InferResponseType<
+  (typeof client.api.notes)[":id"]["$delete"],
+  200
+>;
 
 export function useNotes() {
-  return useQuery({
+  return useQuery<GetNotesResponseType, Error, GetNotesRequestType>({
     queryKey: ["notes"],
     queryFn: async () => {
-      const response = await fetch("/api/notes");
+      const response = await client.api.notes.$get();
+
       if (!response.ok) {
         throw new Error("Failed to fetch notes");
       }
-      return response.json() as Promise<Note[]>;
+
+      return await response.json();
     },
   });
 }
 
-export function useNotesByFolder(folderId: string) {
-  return useQuery({
-    queryKey: ["notes", "folder", folderId],
-    queryFn: async () => {
-      const response = await fetch(`/api/notes/folder/${folderId}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch folder notes");
-      }
-      return response.json() as Promise<Note[]>;
-    },
-    enabled: !!folderId,
-  });
-}
+// export function useNotesByFolder(folderId: string) {
+//   return useQuery({
+//     queryKey: ["notes", "folder", folderId],
+//     queryFn: async () => {
+//       const response = await fetch(`/api/notes/folder/${folderId}`);
+//       if (!response.ok) {
+//         throw new Error("Failed to fetch folder notes");
+//       }
+
+//       return response.json();
+//     },
+//     enabled: !!folderId,
+//   });
+// }
 
 export function useCreateNote() {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async (data: CreateNoteData) => {
-      const response = await fetch("/api/notes", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+  return useMutation<CreateNotesResponseType, Error, CreateNotesRequestType>({
+    mutationFn: async (json) => {
+      const response = await client.api.notes.$post({
+        json,
       });
 
       if (!response.ok) {
         throw new Error("Failed to create note");
       }
 
-      return response.json() as Promise<Note>;
+      return response.json();
     },
     onSuccess: (_, variables) => {
       void queryClient.invalidateQueries({ queryKey: ["notes"] });
@@ -78,30 +95,27 @@ export function useCreateNote() {
   });
 }
 
-export function useUpdateNote() {
+export function useUpdateNote(id: string) {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateNoteData }) => {
-      const response = await fetch(`/api/notes/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+  return useMutation<UpdateNotesResponseType, Error, UpdateNotesRequestType>({
+    mutationFn: async (json) => {
+      const response = await client.api.notes[":id"].$put({
+        json,
+        param: { id },
       });
 
       if (!response.ok) {
         throw new Error("Failed to update note");
       }
 
-      return response.json() as Promise<Note>;
+      return response.json();
     },
     onSuccess: (_, variables) => {
       void queryClient.invalidateQueries({ queryKey: ["notes"] });
-      if (variables.data.folderId) {
+      if (variables.folderId) {
         void queryClient.invalidateQueries({
-          queryKey: ["notes", "folder", variables.data.folderId],
+          queryKey: ["notes", "folder", variables.folderId],
         });
       }
     },
@@ -111,17 +125,17 @@ export function useUpdateNote() {
 export function useDeleteNote() {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const response = await fetch(`/api/notes/${id}`, {
-        method: "DELETE",
+  return useMutation<DeleteNotesResponseType, Error, DeleteNotesRequestType>({
+    mutationFn: async ({ id }) => {
+      const response = await client.api.notes[":id"].$delete({
+        param: { id },
       });
 
       if (!response.ok) {
         throw new Error("Failed to delete note");
       }
 
-      return response.json() as Promise<Note>;
+      return response.json();
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["notes"] });

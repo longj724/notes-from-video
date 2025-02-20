@@ -1,21 +1,57 @@
 // External Dependencies
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type InferSelectModel } from "drizzle-orm";
+import { InferResponseType, InferRequestType } from "hono";
 
 // Internal Dependencies
-import { folders } from "@/server/db/schema";
+import { client } from "@/lib/hono";
 
-type Folder = InferSelectModel<typeof folders>;
+type CreateFolderRequestType = InferRequestType<
+  (typeof client.api.folders)["$post"]
+>["json"];
 
-export function useFolders() {
-  return useQuery({
+type CreateFolderResponseType = InferResponseType<
+  (typeof client.api.folders)["$post"],
+  200
+>;
+
+type GetFoldersRequestType = InferRequestType<
+  (typeof client.api.folders)["$get"]
+>;
+
+type GetFoldersResponseType = InferResponseType<
+  (typeof client.api.folders)["$get"],
+  200
+>;
+
+type UpdateFolderRequestType = InferRequestType<
+  (typeof client.api.folders)[":id"]["$put"]
+>["json"];
+
+type UpdateFolderResponseType = InferResponseType<
+  (typeof client.api.folders)[":id"]["$put"],
+  200
+>;
+
+type DeleteFolderRequestType = InferRequestType<
+  (typeof client.api.folders)[":id"]["$delete"]
+>["param"];
+
+type DeleteFolderResponseType = InferResponseType<
+  (typeof client.api.folders)[":id"]["$delete"],
+  200
+>;
+
+export function useGetFolders() {
+  return useQuery<GetFoldersResponseType, Error, GetFoldersRequestType>({
     queryKey: ["folders"],
     queryFn: async () => {
-      const response = await fetch("/api/folders");
+      const response = await client.api.folders.$get();
+
       if (!response.ok) {
-        throw new Error("Failed to fetch folders");
+        throw new Error("Failed to fetch transcript");
       }
-      return response.json() as Promise<Folder[]>;
+
+      return await response.json();
     },
   });
 }
@@ -23,21 +59,17 @@ export function useFolders() {
 export function useCreateFolder() {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async (data: { name: string }) => {
-      const response = await fetch("/api/folders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+  return useMutation<CreateFolderResponseType, Error, CreateFolderRequestType>({
+    mutationFn: async (data) => {
+      const response = await client.api.folders.$post({
+        json: data,
       });
 
       if (!response.ok) {
         throw new Error("Failed to create folder");
       }
 
-      return response.json() as Promise<Folder>;
+      return response.json();
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["folders"] });
@@ -45,30 +77,21 @@ export function useCreateFolder() {
   });
 }
 
-export function useUpdateFolder() {
+export function useUpdateFolder(id: string) {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: { name: string };
-    }) => {
-      const response = await fetch(`/api/folders/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+  return useMutation<UpdateFolderResponseType, Error, UpdateFolderRequestType>({
+    mutationFn: async (json) => {
+      const response = await client.api.folders[":id"].$put({
+        json,
+        param: { id },
       });
 
       if (!response.ok) {
         throw new Error("Failed to update folder");
       }
 
-      return response.json() as Promise<Folder>;
+      return response.json();
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["folders"] });
@@ -79,17 +102,17 @@ export function useUpdateFolder() {
 export function useDeleteFolder() {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const response = await fetch(`/api/folders/${id}`, {
-        method: "DELETE",
+  return useMutation<DeleteFolderResponseType, Error, DeleteFolderRequestType>({
+    mutationFn: async ({ id }) => {
+      const response = await client.api.folders[":id"].$delete({
+        param: { id },
       });
 
       if (!response.ok) {
         throw new Error("Failed to delete folder");
       }
 
-      return response.json() as Promise<Folder>;
+      return response.json();
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["folders"] });

@@ -8,7 +8,7 @@ import remarkGfm from "remark-gfm";
 // Internal Dependencies
 import { useGetTranscript } from "@/hooks/use-get-transcriptions";
 import { useGenerateSummary } from "@/hooks/use-generate-summary";
-import { useFolders } from "@/hooks/use-folders";
+import { useGetFolders } from "@/hooks/use-folders";
 import { useNotes, useCreateNote, useUpdateNote } from "@/hooks/use-notes";
 import { useCreateFolder } from "@/hooks/use-folders";
 import { Button } from "@/components/ui/button";
@@ -44,7 +44,7 @@ function HomePage() {
     data: summaryData,
     isPending: isSummaryPending,
   } = useGenerateSummary();
-  const { data: folders = [] } = useFolders();
+  const { data: folders } = useGetFolders();
   const { data: notes = [] } = useNotes();
   const { mutate: createFolder } = useCreateFolder();
   const { mutate: updateNote } = useUpdateNote();
@@ -111,8 +111,11 @@ function HomePage() {
     });
   };
 
+  console.log("folders", folders);
+  console.log("notes", notes);
+
   // Transform notes and folders into the format expected by TranscriptionsSidebar
-  const transformedFolders: FolderItem[] = folders.map((folder) => ({
+  const transformedFolders: FolderItem[] = folders?.map((folder) => ({
     id: folder.id,
     name: folder.name,
     transcriptions: notes

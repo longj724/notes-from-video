@@ -136,7 +136,7 @@ export function TranscriptionsSidebar({
         <ScrollArea className="flex-1">
           {!isCollapsed && (
             <div className="p-2">
-              {localFolders.map((folder) => (
+              {localFolders?.map((folder) => (
                 <div key={folder.id} className="mb-2">
                   <Button
                     variant="ghost"
