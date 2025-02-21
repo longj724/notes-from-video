@@ -80,7 +80,6 @@ export function TranscriptionsSidebar({
 
   const handleCreateFolder = () => {
     if (newFolderName.trim()) {
-      console.log("Creating folder:", newFolderName.trim());
       onCreateFolder(newFolderName);
       setNewFolderName("");
       setIsCreatingFolder(false);

@@ -11,7 +11,7 @@ import { notes } from "@/server/db/schema";
 const createNoteSchema = z.object({
   title: z.string().min(1),
   content: z.string().optional(),
-  videoUrl: z.string().url(),
+  videoUrl: z.string(),
   folderId: z.string().optional(),
 });
 

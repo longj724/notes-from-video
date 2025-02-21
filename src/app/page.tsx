@@ -82,14 +82,8 @@ function HomePage() {
   };
 
   const handleCreateTranscription = () => {
-    if (!transcriptionData?.transcript || !transcriptionData.videoId) {
-      console.error("No transcript or video data available");
-      return;
-    }
-
-    const videoUrl = `https://www.youtube.com/watch?v=${transcriptionData.videoId}`;
-    const title =
-      document.title || `YouTube Video - ${transcriptionData.videoId}`;
+    const videoUrl = "";
+    const title = "New Note";
 
     createNote({
       title,
