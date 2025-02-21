@@ -49,6 +49,7 @@ type TranscriptionsSidebarProps = {
   onCreateTranscription: () => void;
   onMoveToFolder: (transcriptionId: string, folderId: string) => void;
   onDeleteFolder: (folderId: string) => void;
+  selectedNoteId?: string;
 };
 
 export function TranscriptionsSidebar({
@@ -59,6 +60,7 @@ export function TranscriptionsSidebar({
   onCreateTranscription,
   onMoveToFolder,
   onDeleteFolder,
+  selectedNoteId,
 }: TranscriptionsSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
@@ -183,7 +185,11 @@ export function TranscriptionsSidebar({
                       {folder.transcriptions.map((transcription) => (
                         <Button
                           key={transcription.id}
-                          variant="ghost"
+                          variant={
+                            selectedNoteId === transcription.id
+                              ? "secondary"
+                              : "ghost"
+                          }
                           size="sm"
                           className="w-full justify-start"
                           onClick={() => onTranscriptionSelect(transcription)}
@@ -241,7 +247,11 @@ export function TranscriptionsSidebar({
                   .map((transcription) => (
                     <Button
                       key={transcription.id}
-                      variant="ghost"
+                      variant={
+                        selectedNoteId === transcription.id
+                          ? "secondary"
+                          : "ghost"
+                      }
                       size="sm"
                       className="w-full justify-start"
                       onClick={() => onTranscriptionSelect(transcription)}

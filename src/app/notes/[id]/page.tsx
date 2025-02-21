@@ -1,15 +1,14 @@
 "use client";
 
 // External Dependencies
-import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import type { InferSelectModel } from "drizzle-orm";
-import { useRouter } from "next/navigation";
 
 // Internal Dependencies
+import { useNote, useNotes, useUpdateNote } from "@/hooks/use-notes";
 import { useGetTranscript } from "@/hooks/use-get-transcriptions";
 import { useGenerateSummary } from "@/hooks/use-generate-summary";
 import { useGetFolders } from "@/hooks/use-folders";
-import { useNotes, useCreateNote, useUpdateNote } from "@/hooks/use-notes";
 import { useCreateFolder, useDeleteFolder } from "@/hooks/use-folders";
 import { TranscriptionsSidebar } from "@/components/transcriptions-sidebar";
 import { TranscriptionEditor } from "@/components/transcription-editor";
@@ -29,9 +28,14 @@ function extractVideoId(url: string): string {
   return match?.[1] ?? "";
 }
 
-function HomePage() {
+const noop = () => {
+  // This is intentionally empty as we don't want to create new notes from the note page
+};
+
+const NotePage = () => {
   const router = useRouter();
-  const [url, setUrl] = useState("");
+  const params = useParams<{ id: string }>();
+  const { data: note } = useNote(params.id);
   const {
     mutate: fetchTranscript,
     data: transcriptionData,
@@ -47,11 +51,12 @@ function HomePage() {
   const { mutate: createFolder } = useCreateFolder();
   const { mutate: deleteFolder } = useDeleteFolder();
   const { mutate: updateNote } = useUpdateNote();
-  const { mutate: createNote } = useCreateNote();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchTranscript({ url });
+    if (note?.videoUrl) {
+      fetchTranscript({ url: note.videoUrl });
+    }
   };
 
   const handleGenerateSummary = () => {
@@ -62,17 +67,6 @@ function HomePage() {
 
   const handleCreateFolder = (name: string) => {
     createFolder({ name });
-  };
-
-  const handleCreateTranscription = () => {
-    const videoUrl = "";
-    const title = "New Note";
-
-    createNote({
-      title,
-      content: "",
-      videoUrl,
-    });
   };
 
   const handleTranscriptionSelect = (transcription: TranscriptionItem) => {
@@ -115,33 +109,36 @@ function HomePage() {
       createdAt: new Date(note.createdAt),
     }));
 
+  const videoId = note?.videoUrl ? extractVideoId(note.videoUrl) : "";
+
   return (
     <div className="flex min-h-screen">
       <TranscriptionsSidebar
         transcriptions={unorganizedTranscriptions}
         folders={transformedFolders}
         onCreateFolder={handleCreateFolder}
-        onCreateTranscription={handleCreateTranscription}
+        onCreateTranscription={noop}
         onTranscriptionSelect={handleTranscriptionSelect}
         onMoveToFolder={handleMoveToFolder}
         onDeleteFolder={handleDeleteFolder}
-        selectedNoteId={undefined}
+        selectedNoteId={params.id}
       />
       <main className="flex-1 pl-[300px]">
         <TranscriptionEditor
-          url={url}
-          onUrlChange={setUrl}
+          url={note?.videoUrl ?? ""}
           onSubmit={handleSubmit}
           isPending={isPending}
-          videoId={transcriptionData?.videoId}
+          videoId={videoId}
           transcript={transcriptionData?.transcript}
           summaryData={summaryData}
           isSummaryPending={isSummaryPending}
           onGenerateSummary={handleGenerateSummary}
+          initialContent={note?.content ?? undefined}
+          // isUrlDisabled
         />
       </main>
     </div>
   );
-}
+};
 
-export default HomePage;
+export default NotePage;

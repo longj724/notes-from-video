@@ -32,6 +32,21 @@ const app = new Hono()
     });
     return c.json(allNotes);
   })
+  .get("/:id", async (c) => {
+    const id = c.req.param("id");
+    const note = await db.query.notes.findFirst({
+      where: eq(notes.id, id),
+      with: {
+        folder: true,
+      },
+    });
+
+    if (!note) {
+      return c.json({ error: "Note not found" }, 404);
+    }
+
+    return c.json(note);
+  })
   .get("/folder/:folderId", async (c) => {
     const folderId = c.req.param("folderId");
     const folderNotes = await db.query.notes.findMany({

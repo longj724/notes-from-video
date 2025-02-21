@@ -12,6 +12,15 @@ type GetNotesResponseType = InferResponseType<
   200
 >;
 
+type GetNoteRequestType = InferRequestType<
+  (typeof client.api.notes)[":id"]["$get"]
+>["param"];
+
+type GetNoteResponseType = InferResponseType<
+  (typeof client.api.notes)[":id"]["$get"],
+  200
+>;
+
 type CreateNotesRequestType = InferRequestType<
   (typeof client.api.notes)["$post"]
 >["json"];
@@ -51,6 +60,24 @@ export function useNotes() {
 
       return await response.json();
     },
+  });
+}
+
+export function useNote(id: string) {
+  return useQuery<GetNoteResponseType, Error>({
+    queryKey: ["notes", id],
+    queryFn: async () => {
+      const response = await client.api.notes[":id"].$get({
+        param: { id },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch note");
+      }
+
+      return response.json();
+    },
+    enabled: !!id,
   });
 }
 

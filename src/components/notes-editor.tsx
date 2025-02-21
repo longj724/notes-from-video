@@ -95,10 +95,11 @@ export interface NotesEditorRef {
 
 interface NotesEditorProps {
   onTimestampClick?: (seconds: number) => void;
+  initialContent?: string;
 }
 
 export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
-  function NotesEditor({ onTimestampClick }, ref) {
+  function NotesEditor({ onTimestampClick, initialContent }, ref) {
     const editor = useEditor({
       extensions: [
         StarterKit.configure({
@@ -137,7 +138,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
           onClick: onTimestampClick,
         }),
       ],
-      content: "",
+      content: initialContent ?? "",
       editorProps: {
         attributes: {
           class:
