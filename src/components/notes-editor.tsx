@@ -1,7 +1,7 @@
 "use client";
 
 // External Dependencies
-import { forwardRef, useImperativeHandle } from "react";
+import { forwardRef, useImperativeHandle, useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -150,6 +150,14 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
         onChange?.(editor.getHTML());
       },
     });
+
+    useEffect(() => {
+      if (editor && initialContent !== undefined) {
+        if (editor.getHTML() !== initialContent) {
+          editor.commands.setContent(initialContent);
+        }
+      }
+    }, [editor, initialContent]);
 
     useImperativeHandle(ref, () => ({
       insertTextWithTimestamp: (text: string, timestamp: number) => {
