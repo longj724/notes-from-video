@@ -204,7 +204,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
     return (
       <Card className="h-full p-4">
         <div className="mb-2 border-b pb-2">
-          <div className="mb-2 flex items-center gap-1">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
             <Select
               value={getFontSize()}
               onValueChange={(value: FontSize) =>
@@ -246,7 +246,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
             </Select>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-2">
             <Toggle
               size="sm"
               pressed={editor.isActive("bold")}
