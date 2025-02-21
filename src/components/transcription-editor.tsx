@@ -50,6 +50,7 @@ export function TranscriptionEditor({
   const playerRef = useRef<YouTubePlayerRef>(null);
   const editorRef = useRef<NotesEditorRef>(null);
   const [localUrl, setLocalUrl] = useState(initialUrl);
+  const [currentTime, setCurrentTime] = useState(0);
 
   useEffect(() => {
     setLocalUrl(initialUrl);
@@ -67,6 +68,10 @@ export function TranscriptionEditor({
 
   const handleTimestampClick = (seconds: number) => {
     playerRef.current?.seekTo(seconds);
+  };
+
+  const handleTimeUpdate = (time: number) => {
+    setCurrentTime(time);
   };
 
   return (
@@ -89,7 +94,11 @@ export function TranscriptionEditor({
         <div className="space-y-4">
           {videoId && (
             <Card className="p-4">
-              <YouTubePlayer ref={playerRef} videoId={videoId} />
+              <YouTubePlayer
+                ref={playerRef}
+                videoId={videoId}
+                onTimeUpdate={handleTimeUpdate}
+              />
             </Card>
           )}
 
@@ -98,18 +107,19 @@ export function TranscriptionEditor({
               transcript={transcript}
               onAddNote={handleAddNote}
               onTimeClick={handleTimestampClick}
+              currentTime={currentTime}
             />
           )}
         </div>
 
         {/* Right Column: Notes Editor and Summary */}
-        <div className="h-full">
-          <Tabs defaultValue="notes" className="h-full">
+        <div>
+          <Tabs defaultValue="notes">
             <TabsList className="mb-4 grid w-full grid-cols-2">
               <TabsTrigger value="notes">Notes</TabsTrigger>
               <TabsTrigger value="summary">AI Summary</TabsTrigger>
             </TabsList>
-            <TabsContent value="notes" className="h-full">
+            <TabsContent value="notes">
               <NotesEditor
                 ref={editorRef}
                 onTimestampClick={handleTimestampClick}
@@ -117,8 +127,8 @@ export function TranscriptionEditor({
                 onChange={onContentChange}
               />
             </TabsContent>
-            <TabsContent value="summary" className="h-full">
-              <Card className="h-full p-4">
+            <TabsContent value="summary">
+              <Card className="p-4">
                 {transcript ? (
                   <div className="space-y-4">
                     <Button

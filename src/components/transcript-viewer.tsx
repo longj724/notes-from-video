@@ -1,5 +1,5 @@
 // External Dependencies
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { ChevronUp, ChevronDown, X, Copy } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,16 +25,46 @@ interface TranscriptViewerProps {
   }[];
   onAddNote?: (text: string, timestamp: number) => void;
   onTimeClick?: (timestamp: number) => void;
+  currentTime?: number;
 }
 
 export function TranscriptViewer({
   transcript,
   onAddNote,
   onTimeClick,
+  currentTime,
 }: TranscriptViewerProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentMatch, setCurrentMatch] = useState(0);
   const transcriptRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Find the current segment based on video time
+  const currentSegmentIndex = useMemo(() => {
+    if (currentTime === undefined) return -1;
+    return transcript.findIndex((segment, index) => {
+      const nextSegment = transcript[index + 1];
+      const segmentEnd = nextSegment
+        ? nextSegment.offset
+        : segment.offset + segment.duration;
+      return currentTime >= segment.offset && currentTime < segmentEnd;
+    });
+  }, [transcript, currentTime]);
+
+  // Auto-scroll to current segment
+  useEffect(() => {
+    if (currentSegmentIndex === -1 || !scrollAreaRef.current) return;
+
+    const segmentElement = scrollAreaRef.current.children[
+      currentSegmentIndex
+    ] as HTMLElement;
+    if (segmentElement) {
+      segmentElement.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [currentSegmentIndex]);
 
   const handleCopyTranscript = () => {
     const fullText = transcript
@@ -102,7 +132,7 @@ export function TranscriptViewer({
   };
 
   return (
-    <div className="mt-4 space-y-4">
+    <div className="space-y-4">
       <div className="flex gap-2">
         <div className="relative max-w-md flex-1">
           <Input
@@ -161,45 +191,48 @@ export function TranscriptViewer({
         </Button>
       </div>
 
-      <Card
-        className="max-h-[500px] space-y-2 overflow-y-auto p-4"
-        ref={transcriptRef}
-      >
-        <ScrollArea className="h-[400px]">
-          {highlightedTranscript
-            .filter(({ text }) => text.trim().length !== 0)
-            .map((segment, index) => (
-              <div
-                key={index}
-                className={`group mb-4 flex items-center gap-2 ${
-                  segment.isMatch ? "bg-yellow-50 dark:bg-yellow-900/20" : ""
-                }`}
-              >
-                <span className="text-muted-foreground text-sm">
-                  {formatTime(Math.round(segment.offset))}
-                </span>
-                <p
-                  className="hover:text-primary flex-1 cursor-pointer leading-relaxed"
-                  dangerouslySetInnerHTML={{
-                    __html: decodeHTMLEntities(segment.text),
-                  }}
-                  onClick={() => onTimeClick?.(Math.round(segment.offset))}
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="opacity-0 group-hover:opacity-100"
-                  onClick={() =>
-                    onAddNote?.(
-                      decodeHTMLEntities(segment.text),
-                      Math.round(segment.offset),
-                    )
-                  }
+      <Card className="h-[400px]" ref={transcriptRef}>
+        <ScrollArea className="h-full" ref={scrollAreaRef}>
+          <div className="space-y-2 p-4">
+            {highlightedTranscript
+              .filter(({ text }) => text.trim().length !== 0)
+              .map((segment, index) => (
+                <div
+                  key={index}
+                  className={`group flex items-center gap-2 ${
+                    segment.isMatch ? "bg-yellow-50 dark:bg-yellow-900/20" : ""
+                  } ${
+                    index === currentSegmentIndex
+                      ? "bg-blue-50 dark:bg-blue-900/20"
+                      : ""
+                  }`}
                 >
-                  Add note
-                </Button>
-              </div>
-            ))}
+                  <span className="text-muted-foreground text-sm">
+                    {formatTime(Math.round(segment.offset))}
+                  </span>
+                  <p
+                    className="hover:text-primary flex-1 cursor-pointer leading-relaxed"
+                    dangerouslySetInnerHTML={{
+                      __html: decodeHTMLEntities(segment.text),
+                    }}
+                    onClick={() => onTimeClick?.(Math.round(segment.offset))}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="opacity-0 group-hover:opacity-100"
+                    onClick={() =>
+                      onAddNote?.(
+                        decodeHTMLEntities(segment.text),
+                        Math.round(segment.offset),
+                      )
+                    }
+                  >
+                    Add note
+                  </Button>
+                </div>
+              ))}
+          </div>
         </ScrollArea>
       </Card>
     </div>
