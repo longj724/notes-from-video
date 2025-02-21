@@ -11,6 +11,9 @@ import {
   PanelLeftClose,
   PanelLeft,
   Trash2,
+  Pencil,
+  Check,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -49,6 +52,8 @@ type TranscriptionsSidebarProps = {
   onCreateTranscription: () => void;
   onMoveToFolder: (transcriptionId: string, folderId: string) => void;
   onDeleteFolder: (folderId: string) => void;
+  onDeleteNote: (noteId: string) => void;
+  onUpdateNoteTitle: (noteId: string, title: string) => void;
   selectedNoteId?: string;
 };
 
@@ -60,6 +65,8 @@ export function TranscriptionsSidebar({
   onCreateTranscription,
   onMoveToFolder,
   onDeleteFolder,
+  onDeleteNote,
+  onUpdateNoteTitle,
   selectedNoteId,
 }: TranscriptionsSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -67,6 +74,9 @@ export function TranscriptionsSidebar({
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [localFolders, setLocalFolders] = useState(folders);
   const [folderToDelete, setFolderToDelete] = useState<string | null>(null);
+  const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editingNoteTitle, setEditingNoteTitle] = useState("");
 
   useEffect(() => {
     setLocalFolders(folders);
@@ -86,6 +96,103 @@ export function TranscriptionsSidebar({
       setNewFolderName("");
       setIsCreatingFolder(false);
     }
+  };
+
+  const startEditingNote = (note: TranscriptionItem) => {
+    setEditingNoteId(note.id);
+    setEditingNoteTitle(note.title);
+  };
+
+  const saveNoteTitle = () => {
+    if (editingNoteId && editingNoteTitle.trim()) {
+      onUpdateNoteTitle(editingNoteId, editingNoteTitle.trim());
+      setEditingNoteId(null);
+      setEditingNoteTitle("");
+    }
+  };
+
+  const cancelEditingNote = () => {
+    setEditingNoteId(null);
+    setEditingNoteTitle("");
+  };
+
+  const renderNote = (transcription: TranscriptionItem) => {
+    const isEditing = editingNoteId === transcription.id;
+
+    return (
+      <div
+        key={transcription.id}
+        className="group relative flex items-center gap-1"
+      >
+        {isEditing ? (
+          <>
+            <Input
+              value={editingNoteTitle}
+              onChange={(e) => setEditingNoteTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") saveNoteTitle();
+                if (e.key === "Escape") cancelEditingNote();
+              }}
+              className="h-8 flex-1"
+              autoFocus
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={saveNoteTitle}
+            >
+              <Check className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={cancelEditingNote}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              variant={
+                selectedNoteId === transcription.id ? "secondary" : "ghost"
+              }
+              size="sm"
+              className="flex-1 justify-start"
+              onClick={() => onTranscriptionSelect(transcription)}
+            >
+              {transcription.title}
+            </Button>
+            <div className="opacity-0 transition-opacity group-hover:opacity-100">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  startEditingNote(transcription);
+                }}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setNoteToDelete(transcription.id);
+                }}
+              >
+                <Trash2 className="text-destructive h-4 w-4" />
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -182,21 +289,7 @@ export function TranscriptionsSidebar({
                   </Button>
                   {folder.isOpen && (
                     <div className="ml-6 mt-1 space-y-1">
-                      {folder.transcriptions.map((transcription) => (
-                        <Button
-                          key={transcription.id}
-                          variant={
-                            selectedNoteId === transcription.id
-                              ? "secondary"
-                              : "ghost"
-                          }
-                          size="sm"
-                          className="w-full justify-start"
-                          onClick={() => onTranscriptionSelect(transcription)}
-                        >
-                          {transcription.title}
-                        </Button>
-                      ))}
+                      {folder.transcriptions.map(renderNote)}
                     </div>
                   )}
                 </div>
@@ -236,6 +329,40 @@ export function TranscriptionsSidebar({
                 </DialogContent>
               </Dialog>
 
+              <Dialog
+                open={!!noteToDelete}
+                onOpenChange={() => setNoteToDelete(null)}
+              >
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Delete Note</DialogTitle>
+                    <DialogDescription>
+                      Are you sure you want to delete this note? This action
+                      cannot be undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setNoteToDelete(null)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        if (noteToDelete) {
+                          onDeleteNote(noteToDelete);
+                          setNoteToDelete(null);
+                        }
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
               <div className="space-y-1">
                 {transcriptions
                   .filter(
@@ -244,21 +371,7 @@ export function TranscriptionsSidebar({
                         f.transcriptions.some((ft) => ft.id === t.id),
                       ),
                   )
-                  .map((transcription) => (
-                    <Button
-                      key={transcription.id}
-                      variant={
-                        selectedNoteId === transcription.id
-                          ? "secondary"
-                          : "ghost"
-                      }
-                      size="sm"
-                      className="w-full justify-start"
-                      onClick={() => onTranscriptionSelect(transcription)}
-                    >
-                      {transcription.title}
-                    </Button>
-                  ))}
+                  .map(renderNote)}
               </div>
             </div>
           )}

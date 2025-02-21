@@ -9,7 +9,12 @@ import { useRouter } from "next/navigation";
 import { useGetTranscript } from "@/hooks/use-get-transcriptions";
 import { useGenerateSummary } from "@/hooks/use-generate-summary";
 import { useGetFolders } from "@/hooks/use-folders";
-import { useNotes, useCreateNote, useUpdateNote } from "@/hooks/use-notes";
+import {
+  useNotes,
+  useCreateNote,
+  useUpdateNote,
+  useDeleteNote,
+} from "@/hooks/use-notes";
 import { useCreateFolder, useDeleteFolder } from "@/hooks/use-folders";
 import { TranscriptionsSidebar } from "@/components/transcriptions-sidebar";
 import { TranscriptionEditor } from "@/components/transcription-editor";
@@ -47,6 +52,7 @@ function HomePage() {
   const { mutate: createFolder } = useCreateFolder();
   const { mutate: deleteFolder } = useDeleteFolder();
   const { mutate: updateNote } = useUpdateNote();
+  const { mutate: deleteNote } = useDeleteNote();
   const { mutate: createNote } = useCreateNote();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -90,6 +96,17 @@ function HomePage() {
     deleteFolder({ id: folderId });
   };
 
+  const handleDeleteNote = (noteId: string) => {
+    deleteNote({ id: noteId });
+  };
+
+  const handleUpdateNoteTitle = (noteId: string, title: string) => {
+    updateNote({
+      id: noteId,
+      title,
+    });
+  };
+
   const transformedFolders: FolderItem[] = (folders as Folder[]).map(
     (folder) => ({
       id: folder.id,
@@ -125,6 +142,8 @@ function HomePage() {
         onTranscriptionSelect={handleTranscriptionSelect}
         onMoveToFolder={handleMoveToFolder}
         onDeleteFolder={handleDeleteFolder}
+        onDeleteNote={handleDeleteNote}
+        onUpdateNoteTitle={handleUpdateNoteTitle}
         selectedNoteId={undefined}
       />
       <main className="flex-1 pl-[300px]">

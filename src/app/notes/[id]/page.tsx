@@ -5,7 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import type { InferSelectModel } from "drizzle-orm";
 
 // Internal Dependencies
-import { useNote, useNotes, useUpdateNote } from "@/hooks/use-notes";
+import {
+  useNote,
+  useNotes,
+  useUpdateNote,
+  useDeleteNote,
+} from "@/hooks/use-notes";
 import { useGetTranscript } from "@/hooks/use-get-transcriptions";
 import { useGenerateSummary } from "@/hooks/use-generate-summary";
 import { useGetFolders } from "@/hooks/use-folders";
@@ -51,6 +56,7 @@ const NotePage = () => {
   const { mutate: createFolder } = useCreateFolder();
   const { mutate: deleteFolder } = useDeleteFolder();
   const { mutate: updateNote } = useUpdateNote();
+  const { mutate: deleteNote } = useDeleteNote();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +88,20 @@ const NotePage = () => {
 
   const handleDeleteFolder = (folderId: string) => {
     deleteFolder({ id: folderId });
+  };
+
+  const handleDeleteNote = (noteId: string) => {
+    deleteNote({ id: noteId });
+    if (noteId === params.id) {
+      router.push("/");
+    }
+  };
+
+  const handleUpdateNoteTitle = (noteId: string, title: string) => {
+    updateNote({
+      id: noteId,
+      title,
+    });
   };
 
   const transformedFolders: FolderItem[] = (folders as Folder[]).map(
@@ -121,6 +141,8 @@ const NotePage = () => {
         onTranscriptionSelect={handleTranscriptionSelect}
         onMoveToFolder={handleMoveToFolder}
         onDeleteFolder={handleDeleteFolder}
+        onDeleteNote={handleDeleteNote}
+        onUpdateNoteTitle={handleUpdateNoteTitle}
         selectedNoteId={params.id}
       />
       <main className="flex-1 pl-[300px]">
@@ -134,7 +156,7 @@ const NotePage = () => {
           isSummaryPending={isSummaryPending}
           onGenerateSummary={handleGenerateSummary}
           initialContent={note?.content ?? undefined}
-          // isUrlDisabled
+          isUrlDisabled
         />
       </main>
     </div>
