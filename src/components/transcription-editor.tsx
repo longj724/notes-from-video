@@ -1,7 +1,7 @@
 "use client";
 
 // External Dependencies
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -31,11 +31,11 @@ interface TranscriptionEditorProps {
   isSummaryPending?: boolean;
   onGenerateSummary?: () => void;
   initialContent?: string;
-  isUrlDisabled?: boolean;
+  onContentChange?: (content: string) => void;
 }
 
 export function TranscriptionEditor({
-  url,
+  url: initialUrl,
   onUrlChange,
   onSubmit,
   isPending,
@@ -45,10 +45,21 @@ export function TranscriptionEditor({
   isSummaryPending,
   onGenerateSummary,
   initialContent,
-  isUrlDisabled,
+  onContentChange,
 }: TranscriptionEditorProps) {
   const playerRef = useRef<YouTubePlayerRef>(null);
   const editorRef = useRef<NotesEditorRef>(null);
+  const [localUrl, setLocalUrl] = useState(initialUrl);
+
+  useEffect(() => {
+    setLocalUrl(initialUrl);
+  }, [initialUrl]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onUrlChange?.(localUrl);
+    onSubmit(e);
+  };
 
   const handleAddNote = (text: string, timestamp: number) => {
     editorRef.current?.insertTextWithTimestamp(text, timestamp);
@@ -60,13 +71,12 @@ export function TranscriptionEditor({
 
   return (
     <div className="container py-8">
-      <form onSubmit={onSubmit} className="mb-8 flex gap-2">
+      <form onSubmit={handleSubmit} className="mb-8 flex gap-2">
         <Input
           type="url"
           placeholder="Enter YouTube URL..."
-          value={url}
-          onChange={(e) => onUrlChange?.(e.target.value)}
-          disabled={isUrlDisabled}
+          value={localUrl}
+          onChange={(e) => setLocalUrl(e.target.value)}
           className="flex-1"
         />
         <Button type="submit" disabled={isPending}>
@@ -104,6 +114,7 @@ export function TranscriptionEditor({
                 ref={editorRef}
                 onTimestampClick={handleTimestampClick}
                 initialContent={initialContent}
+                onChange={onContentChange}
               />
             </TabsContent>
             <TabsContent value="summary" className="h-full">

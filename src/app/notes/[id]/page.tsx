@@ -3,6 +3,8 @@
 // External Dependencies
 import { useParams, useRouter } from "next/navigation";
 import type { InferSelectModel } from "drizzle-orm";
+import { useCallback } from "react";
+import _ from "lodash";
 
 // Internal Dependencies
 import {
@@ -37,6 +39,8 @@ const noop = () => {
   // This is intentionally empty as we don't want to create new notes from the note page
 };
 
+const DEBOUNCE_MS = 1000;
+
 const NotePage = () => {
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -58,10 +62,28 @@ const NotePage = () => {
   const { mutate: updateNote } = useUpdateNote();
   const { mutate: deleteNote } = useDeleteNote();
 
+  const debouncedUpdateNote = useCallback(
+    _.debounce((noteId: string, content: string) => {
+      console.log("debouncedUpdateNote", noteId, content);
+      updateNote({
+        id: noteId,
+        content,
+      });
+    }, DEBOUNCE_MS),
+    [updateNote],
+  );
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (note?.videoUrl) {
-      fetchTranscript({ url: note.videoUrl });
+  };
+
+  const handleUrlChange = (newUrl: string) => {
+    if (note) {
+      fetchTranscript({ url: newUrl });
+      updateNote({
+        id: note.id,
+        videoUrl: newUrl,
+      });
     }
   };
 
@@ -102,6 +124,12 @@ const NotePage = () => {
       id: noteId,
       title,
     });
+  };
+
+  const handleContentChange = (content: string) => {
+    if (note) {
+      debouncedUpdateNote(note.id, content);
+    }
   };
 
   const transformedFolders: FolderItem[] = (folders as Folder[]).map(
@@ -148,6 +176,7 @@ const NotePage = () => {
       <main className="flex-1 pl-[300px]">
         <TranscriptionEditor
           url={note?.videoUrl ?? ""}
+          onUrlChange={handleUrlChange}
           onSubmit={handleSubmit}
           isPending={isPending}
           videoId={videoId}
@@ -156,7 +185,7 @@ const NotePage = () => {
           isSummaryPending={isSummaryPending}
           onGenerateSummary={handleGenerateSummary}
           initialContent={note?.content ?? undefined}
-          isUrlDisabled
+          onContentChange={handleContentChange}
         />
       </main>
     </div>

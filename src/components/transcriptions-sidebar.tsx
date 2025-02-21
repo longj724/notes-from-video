@@ -120,12 +120,9 @@ export function TranscriptionsSidebar({
     const isEditing = editingNoteId === transcription.id;
 
     return (
-      <div
-        key={transcription.id}
-        className="group relative flex items-center gap-1"
-      >
+      <div key={transcription.id} className="group relative">
         {isEditing ? (
-          <>
+          <div className="flex items-center gap-1">
             <Input
               value={editingNoteTitle}
               onChange={(e) => setEditingNoteTitle(e.target.value)}
@@ -152,7 +149,7 @@ export function TranscriptionsSidebar({
             >
               <X className="h-4 w-4" />
             </Button>
-          </>
+          </div>
         ) : (
           <>
             <Button
@@ -160,33 +157,33 @@ export function TranscriptionsSidebar({
                 selectedNoteId === transcription.id ? "secondary" : "ghost"
               }
               size="sm"
-              className="flex-1 justify-start"
+              className="w-full justify-start"
               onClick={() => onTranscriptionSelect(transcription)}
             >
               {transcription.title}
             </Button>
-            <div className="opacity-0 transition-opacity group-hover:opacity-100">
+            <div className="absolute right-1 top-1/2 flex -translate-y-1/2 gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-6 w-6"
                 onClick={(e) => {
                   e.stopPropagation();
                   startEditingNote(transcription);
                 }}
               >
-                <Pencil className="h-4 w-4" />
+                <Pencil className="h-3 w-3" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-6 w-6 group-hover:opacity-100"
                 onClick={(e) => {
                   e.stopPropagation();
                   setNoteToDelete(transcription.id);
                 }}
               >
-                <Trash2 className="text-destructive h-4 w-4" />
+                <Trash2 className="text-destructive h-3 w-3" />
               </Button>
             </div>
           </>

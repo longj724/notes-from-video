@@ -96,10 +96,11 @@ export interface NotesEditorRef {
 interface NotesEditorProps {
   onTimestampClick?: (seconds: number) => void;
   initialContent?: string;
+  onChange?: (content: string) => void;
 }
 
 export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
-  function NotesEditor({ onTimestampClick, initialContent }, ref) {
+  function NotesEditor({ onTimestampClick, initialContent, onChange }, ref) {
     const editor = useEditor({
       extensions: [
         StarterKit.configure({
@@ -144,6 +145,9 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
           class:
             "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none",
         },
+      },
+      onUpdate: ({ editor }) => {
+        onChange?.(editor.getHTML());
       },
     });
 
