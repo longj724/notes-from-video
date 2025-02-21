@@ -1,6 +1,7 @@
 // External Dependencies
 import { useState, useMemo, useRef } from "react";
-import { ChevronUp, ChevronDown, X } from "lucide-react";
+import { ChevronUp, ChevronDown, X, Copy } from "lucide-react";
+import { toast } from "sonner";
 
 // Relative Dependencies
 import { Card } from "@/components/ui/card";
@@ -34,6 +35,16 @@ export function TranscriptViewer({
   const [searchQuery, setSearchQuery] = useState("");
   const [currentMatch, setCurrentMatch] = useState(0);
   const transcriptRef = useRef<HTMLDivElement>(null);
+
+  const handleCopyTranscript = () => {
+    const fullText = transcript
+      .map((segment) => decodeHTMLEntities(segment.text))
+      .join("\n");
+    navigator.clipboard
+      .writeText(fullText)
+      .then(() => toast.success("Transcript copied to clipboard"))
+      .catch(() => toast.error("Failed to copy transcript"));
+  };
 
   const highlightedTranscript = useMemo(() => {
     if (!searchQuery.trim()) return transcript;
@@ -140,6 +151,14 @@ export function TranscriptViewer({
             </div>
           )}
         </div>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={handleCopyTranscript}
+          title="Copy transcript"
+        >
+          <Copy className="h-4 w-4" />
+        </Button>
       </div>
 
       <Card
