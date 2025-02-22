@@ -2,7 +2,6 @@
 
 // External Dependencies
 import { useParams, useRouter } from "next/navigation";
-import type { InferSelectModel } from "drizzle-orm";
 import { useCallback } from "react";
 import _ from "lodash";
 
@@ -15,18 +14,10 @@ import {
 } from "@/hooks/use-notes";
 import { useGetTranscript } from "@/hooks/use-get-transcriptions";
 import { useGenerateSummary } from "@/hooks/use-generate-summary";
-import { useGetFolders } from "@/hooks/use-folders";
-import { useCreateFolder, useDeleteFolder } from "@/hooks/use-folders";
+import { useCreateNote } from "@/hooks/use-notes";
 import { TranscriptionsSidebar } from "@/components/transcriptions-sidebar";
 import { TranscriptionEditor } from "@/components/transcription-editor";
-import { folders, notes } from "@/server/db/schema";
-import type {
-  TranscriptionItem,
-  FolderItem,
-} from "@/components/transcriptions-sidebar";
-
-type Folder = InferSelectModel<typeof folders>;
-type Note = InferSelectModel<typeof notes>;
+import type { TranscriptionItem, Note } from "@/lib/types";
 
 function extractVideoId(url: string): string {
   const regex =
@@ -55,10 +46,8 @@ const NotePage = () => {
     data: summaryData,
     isPending: isSummaryPending,
   } = useGenerateSummary();
-  const { data: folders = [] } = useGetFolders();
-  const { data: notes = [] } = useNotes();
-  const { mutate: createFolder } = useCreateFolder();
-  const { mutate: deleteFolder } = useDeleteFolder();
+  const { data: notes } = useNotes();
+  const { mutate: createNote } = useCreateNote();
   const { mutate: updateNote } = useUpdateNote();
   const { mutate: deleteNote } = useDeleteNote();
 
@@ -93,10 +82,6 @@ const NotePage = () => {
     }
   };
 
-  const handleCreateFolder = (name: string) => {
-    createFolder({ name });
-  };
-
   const handleTranscriptionSelect = (transcription: TranscriptionItem) => {
     router.push(`/notes/${transcription.id}`);
   };
@@ -108,8 +93,15 @@ const NotePage = () => {
     });
   };
 
-  const handleDeleteFolder = (folderId: string) => {
-    deleteFolder({ id: folderId });
+  const handleCreateTranscription = () => {
+    const videoUrl = "";
+    const title = "New Note";
+
+    createNote({
+      title,
+      content: "",
+      videoUrl,
+    });
   };
 
   const handleDeleteNote = (noteId: string) => {
@@ -132,43 +124,23 @@ const NotePage = () => {
     }
   };
 
-  const transformedFolders: FolderItem[] = (folders as Folder[]).map(
-    (folder) => ({
-      id: folder.id,
-      name: folder.name,
-      transcriptions: (notes as Note[])
-        .filter((note) => note.folderId === folder.id)
-        .map((note) => ({
-          id: note.id,
-          title: note.title,
-          videoId: extractVideoId(note.videoUrl),
-          createdAt: new Date(note.createdAt),
-        })),
-      isOpen: false,
-    }),
-  );
-
-  const unorganizedTranscriptions: TranscriptionItem[] = (notes as Note[])
-    .filter((note) => !note.folderId)
-    .map((note) => ({
+  const formattedTranscriptions: TranscriptionItem[] = (notes as Note[]).map(
+    (note) => ({
       id: note.id,
       title: note.title,
       videoId: extractVideoId(note.videoUrl),
       createdAt: new Date(note.createdAt),
-    }));
+    }),
+  );
 
   const videoId = note?.videoUrl ? extractVideoId(note.videoUrl) : "";
 
   return (
     <div className="flex min-h-screen">
       <TranscriptionsSidebar
-        transcriptions={unorganizedTranscriptions}
-        folders={transformedFolders}
-        onCreateFolder={handleCreateFolder}
-        onCreateTranscription={noop}
+        transcriptions={formattedTranscriptions}
+        onCreateTranscription={handleCreateTranscription}
         onTranscriptionSelect={handleTranscriptionSelect}
-        onMoveToFolder={handleMoveToFolder}
-        onDeleteFolder={handleDeleteFolder}
         onDeleteNote={handleDeleteNote}
         onUpdateNoteTitle={handleUpdateNoteTitle}
         selectedNoteId={params.id}
