@@ -48,8 +48,8 @@ type DeleteNotesResponseType = InferResponseType<
   200
 >;
 
-export function useNotes() {
-  return useQuery<GetNotesResponseType, Error, GetNotesRequestType>({
+export function useGetNotes() {
+  return useQuery<GetNotesResponseType, Error>({
     queryKey: ["notes"],
     queryFn: async () => {
       const response = await client.api.notes.$get();

@@ -113,7 +113,7 @@ export function TranscriptionsSidebar({
             >
               {transcription.title}
             </Button>
-            <div className="bg-background absolute right-1 top-1/2 flex -translate-y-1/2 gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+            <div className="absolute right-1 top-1/2 flex -translate-y-1/2 gap-0.5 bg-background opacity-0 transition-opacity group-hover:opacity-100">
               <Button
                 variant="ghost"
                 size="icon"
@@ -134,7 +134,7 @@ export function TranscriptionsSidebar({
                   setNoteToDelete(transcription.id);
                 }}
               >
-                <Trash2 className="text-destructive h-3 w-3" />
+                <Trash2 className="h-3 w-3 text-destructive" />
               </Button>
             </div>
           </>
@@ -146,7 +146,7 @@ export function TranscriptionsSidebar({
   return (
     <div
       className={cn(
-        "bg-background fixed left-0 top-0 h-screen border-r transition-all duration-300",
+        "fixed left-0 top-0 h-screen border-r bg-background transition-all duration-300",
         isCollapsed ? "w-[60px]" : "w-[300px]",
       )}
     >
@@ -182,7 +182,7 @@ export function TranscriptionsSidebar({
         <ScrollArea className="flex-1">
           {!isCollapsed && (
             <div className="space-y-1 p-2">
-              {transcriptions.map(renderNote)}
+              {transcriptions?.map(renderNote)}
             </div>
           )}
         </ScrollArea>

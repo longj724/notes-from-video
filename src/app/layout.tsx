@@ -1,10 +1,14 @@
-import "@/styles/globals.css";
-
+// External Dependencies
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
 import { Toaster } from "sonner";
+
+// Internal Dependencies
+import "@/styles/globals.css";
 import { Providers } from "@/components/ui/providers";
 import { ThemeProvider } from "@/components/theme-provider";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import AppSidebar from "@/components/app-sidebar";
 
 export const metadata: Metadata = {
   title: "Notes from Video",
@@ -24,8 +28,13 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Providers>{children}</Providers>
-          <Toaster />
+          <Providers>
+            <SidebarProvider>
+              <AppSidebar />
+              {children}
+            </SidebarProvider>
+            <Toaster />
+          </Providers>
         </ThemeProvider>
       </body>
     </html>

@@ -9,6 +9,6 @@ export type Note = {
   id: string;
   title: string;
   videoUrl: string;
-  createdAt: Date;
+  createdAt: string;
   folderId: string | null;
 };

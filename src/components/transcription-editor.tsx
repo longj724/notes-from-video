@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TranscriptViewer } from "@/components/transcript-viewer";
 import { NotesEditor, NotesEditorRef } from "@/components/notes-editor";
 import { YouTubePlayer, YouTubePlayerRef } from "@/components/youtube-player";
+import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 
 interface TranscriptionEditorProps {
   url: string;
@@ -51,6 +52,8 @@ export function TranscriptionEditor({
   const editorRef = useRef<NotesEditorRef>(null);
   const [localUrl, setLocalUrl] = useState(initialUrl);
   const [currentTime, setCurrentTime] = useState(0);
+
+  const sidebarContext = useSidebar();
 
   useEffect(() => {
     setLocalUrl(initialUrl);
@@ -149,7 +152,7 @@ export function TranscriptionEditor({
                     )}
                   </div>
                 ) : (
-                  <p className="text-muted-foreground text-center">
+                  <p className="text-center text-muted-foreground">
                     Get a transcript first to generate an AI summary
                   </p>
                 )}
