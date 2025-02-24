@@ -3,8 +3,9 @@
 // External Dependencies
 import { useState } from "react";
 import { MoreHorizontal, Pencil, Plus, Trash2, X } from "lucide-react";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
+
 // Internal Dependencies
 import {
   Sidebar,
@@ -18,7 +19,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -32,7 +32,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -48,13 +47,13 @@ import {
   useDeleteNote,
 } from "@/hooks/use-notes";
 import { Note } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 const AppSidebar = () => {
   const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editingNoteTitle, setEditingNoteTitle] = useState("");
 
-  const router = useRouter();
   const params = useParams<{ id: string }>();
   const { isMobile } = useSidebar();
 
@@ -138,7 +137,10 @@ const AppSidebar = () => {
           {notes?.map((note) => (
             <SidebarMenuItem
               key={note.id}
-              className="flex flex-row items-center p-1 hover:bg-gray-100"
+              className={cn(
+                "flex flex-row items-center p-1 hover:bg-gray-100",
+                params.id === note.id && "bg-gray-100",
+              )}
             >
               {editingNoteId === note.id ? (
                 <div className="flex w-full items-center gap-2 px-2">
