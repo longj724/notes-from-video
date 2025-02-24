@@ -1,7 +1,8 @@
 // External Dependencies
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, memo } from "react";
 import { ChevronUp, ChevronDown, X, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { useDebouncedCallback } from "use-debounce";
 
 // Relative Dependencies
 import { Card } from "@/components/ui/card";
@@ -28,6 +29,87 @@ interface TranscriptViewerProps {
   currentTime?: number;
 }
 
+interface TranscriptSegmentProps {
+  segment: {
+    text: string;
+    offset: number;
+    isMatch?: boolean;
+  };
+  searchQuery: string;
+  isCurrentSegment: boolean;
+  onTimeClick?: (timestamp: number) => void;
+  onAddNote?: (text: string, timestamp: number) => void;
+}
+
+const TranscriptSegment = memo(function TranscriptSegment({
+  segment,
+  searchQuery,
+  isCurrentSegment,
+  onTimeClick,
+  onAddNote,
+}: TranscriptSegmentProps) {
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  };
+
+  const highlightText = (text: string, query: string) => {
+    if (!query.trim()) return text;
+    try {
+      const regex = new RegExp(`(${query})`, "gi");
+      const parts = text.split(regex);
+      return parts.map((part, i) =>
+        part.toLowerCase() === query.toLowerCase() ? (
+          <mark key={i} className="bg-yellow-200 dark:bg-yellow-800">
+            {part}
+          </mark>
+        ) : (
+          part
+        ),
+      );
+    } catch (error) {
+      // If regex is invalid, return the original text
+      return text;
+    }
+  };
+
+  return (
+    <div
+      className={`group flex items-center gap-2 rounded-md p-2 transition-colors ${
+        segment.isMatch ? "bg-yellow-50 dark:bg-yellow-900/20" : ""
+      } ${
+        isCurrentSegment
+          ? "bg-blue-100 shadow-sm dark:bg-blue-900/40"
+          : "hover:bg-muted/50"
+      }`}
+    >
+      <span className="text-sm text-muted-foreground">
+        {formatTime(Math.round(segment.offset))}
+      </span>
+      <p
+        className="flex-1 cursor-pointer leading-relaxed hover:text-primary"
+        onClick={() => onTimeClick?.(Math.round(segment.offset))}
+      >
+        {highlightText(decodeHTMLEntities(segment.text), searchQuery)}
+      </p>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="opacity-0 group-hover:opacity-100"
+        onClick={() =>
+          onAddNote?.(
+            decodeHTMLEntities(segment.text),
+            Math.round(segment.offset),
+          )
+        }
+      >
+        Add note
+      </Button>
+    </div>
+  );
+});
+
 export function TranscriptViewer({
   transcript,
   onAddNote,
@@ -35,10 +117,20 @@ export function TranscriptViewer({
   currentTime,
 }: TranscriptViewerProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [currentMatch, setCurrentMatch] = useState(0);
   const transcriptRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
+
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const debouncedSetSearch = useDebouncedCallback(
+    (value: string): void => {
+      setDebouncedSearchQuery(value);
+    },
+    1000,
+    { maxWait: 2000 },
+  );
 
   // Find the current segment based on video time
   const currentSegmentIndex = useMemo(() => {
@@ -87,23 +179,19 @@ export function TranscriptViewer({
   };
 
   const highlightedTranscript = useMemo(() => {
-    if (!searchQuery.trim()) return transcript;
+    if (!debouncedSearchQuery.trim()) return transcript;
 
     return transcript.map((segment) => {
-      const regex = new RegExp(`(${searchQuery})`, "gi");
+      const regex = new RegExp(debouncedSearchQuery, "gi");
       const matches = segment.text.match(regex);
 
       return {
         ...segment,
         isMatch: !!matches,
         matchCount: matches?.length ?? 0,
-        text: segment.text.replace(
-          regex,
-          '<mark class="bg-yellow-200 dark:bg-yellow-800">$1</mark>',
-        ),
       };
     });
-  }, [transcript, searchQuery]);
+  }, [transcript, debouncedSearchQuery]);
 
   const matchingSegments = highlightedTranscript.filter(
     (segment) => segment.isMatch,
@@ -132,13 +220,10 @@ export function TranscriptViewer({
 
   const clearSearch = () => {
     setSearchQuery("");
+    setDebouncedSearchQuery("");
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    debouncedSetSearch.cancel();
     setCurrentMatch(0);
-  };
-
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.floor(seconds % 60);
-    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
   return (
@@ -151,6 +236,8 @@ export function TranscriptViewer({
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+              debouncedSetSearch(e.target.value);
               setCurrentMatch(0);
             }}
             className="pr-24"
@@ -207,40 +294,14 @@ export function TranscriptViewer({
             {highlightedTranscript
               .filter(({ text }) => text.trim().length !== 0)
               .map((segment, index) => (
-                <div
-                  key={index}
-                  className={`group flex items-center gap-2 rounded-md p-2 transition-colors ${
-                    segment.isMatch ? "bg-yellow-50 dark:bg-yellow-900/20" : ""
-                  } ${
-                    index === currentSegmentIndex
-                      ? "bg-blue-100 shadow-sm dark:bg-blue-900/40"
-                      : "hover:bg-muted/50"
-                  }`}
-                >
-                  <span className="text-sm text-muted-foreground">
-                    {formatTime(Math.round(segment.offset))}
-                  </span>
-                  <p
-                    className="flex-1 cursor-pointer leading-relaxed hover:text-primary"
-                    dangerouslySetInnerHTML={{
-                      __html: decodeHTMLEntities(segment.text),
-                    }}
-                    onClick={() => onTimeClick?.(Math.round(segment.offset))}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="opacity-0 group-hover:opacity-100"
-                    onClick={() =>
-                      onAddNote?.(
-                        decodeHTMLEntities(segment.text),
-                        Math.round(segment.offset),
-                      )
-                    }
-                  >
-                    Add note
-                  </Button>
-                </div>
+                <TranscriptSegment
+                  key={segment.offset}
+                  segment={segment}
+                  searchQuery={debouncedSearchQuery}
+                  isCurrentSegment={index === currentSegmentIndex}
+                  onTimeClick={onTimeClick}
+                  onAddNote={onAddNote}
+                />
               ))}
           </div>
         </ScrollArea>
