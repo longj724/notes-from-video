@@ -49,11 +49,10 @@ export function TranscriptionEditor({
   const { data: note } = useNote(params.id);
 
   useEffect(() => {
-    console.log("initialUrl", initialUrl);
     if (initialUrl) {
       generateTranscript({ url: initialUrl });
     }
-  }, []);
+  }, [initialUrl, generateTranscript]);
 
   const handleSubmit = (e: React.FormEvent) => {
     if (currentUrl) {
