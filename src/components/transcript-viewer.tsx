@@ -38,6 +38,7 @@ export function TranscriptViewer({
   const [currentMatch, setCurrentMatch] = useState(0);
   const transcriptRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
 
   // Find the current segment based on video time
   const currentSegmentIndex = useMemo(() => {
@@ -51,19 +52,28 @@ export function TranscriptViewer({
     });
   }, [transcript, currentTime]);
 
-  // Auto-scroll to current segment
+  // Auto-scroll to current segment with a smooth animation
   useEffect(() => {
-    if (currentSegmentIndex === -1 || !scrollAreaRef.current) return;
+    if (
+      currentSegmentIndex === -1 ||
+      !scrollAreaRef.current ||
+      !viewportRef.current
+    )
+      return;
 
     const segmentElement = scrollAreaRef.current.children[
       currentSegmentIndex
     ] as HTMLElement;
-    if (segmentElement) {
-      segmentElement.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }
+    if (!segmentElement) return;
+
+    const viewportHeight = viewportRef.current.clientHeight;
+    const segmentTop = segmentElement.offsetTop;
+    const targetScroll = Math.max(0, segmentTop - viewportHeight * 0.2); // Position segment 20% from the top
+
+    viewportRef.current.scrollTo({
+      top: targetScroll,
+      behavior: "smooth",
+    });
   }, [currentSegmentIndex]);
 
   const handleCopyTranscript = () => {
@@ -147,7 +157,7 @@ export function TranscriptViewer({
           />
           {searchQuery && (
             <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
-              <span className="text-muted-foreground text-sm">
+              <span className="text-sm text-muted-foreground">
                 {totalMatches > 0
                   ? `${currentMatch + 1}/${totalMatches}`
                   : "0/0"}
@@ -191,27 +201,27 @@ export function TranscriptViewer({
         </Button>
       </div>
 
-      <Card className="h-[400px]" ref={transcriptRef}>
-        <ScrollArea className="h-full" ref={scrollAreaRef}>
-          <div className="space-y-2 p-4">
+      <Card className="h-[calc(100vh-24rem)]" ref={transcriptRef}>
+        <ScrollArea className="h-full" ref={viewportRef}>
+          <div className="space-y-2 p-4" ref={scrollAreaRef}>
             {highlightedTranscript
               .filter(({ text }) => text.trim().length !== 0)
               .map((segment, index) => (
                 <div
                   key={index}
-                  className={`group flex items-center gap-2 ${
+                  className={`group flex items-center gap-2 rounded-md p-2 transition-colors ${
                     segment.isMatch ? "bg-yellow-50 dark:bg-yellow-900/20" : ""
                   } ${
                     index === currentSegmentIndex
-                      ? "bg-blue-50 dark:bg-blue-900/20"
-                      : ""
+                      ? "bg-blue-100 shadow-sm dark:bg-blue-900/40"
+                      : "hover:bg-muted/50"
                   }`}
                 >
-                  <span className="text-muted-foreground text-sm">
+                  <span className="text-sm text-muted-foreground">
                     {formatTime(Math.round(segment.offset))}
                   </span>
                   <p
-                    className="hover:text-primary flex-1 cursor-pointer leading-relaxed"
+                    className="flex-1 cursor-pointer leading-relaxed hover:text-primary"
                     dangerouslySetInnerHTML={{
                       __html: decodeHTMLEntities(segment.text),
                     }}
