@@ -17,20 +17,14 @@ import { NotesEditor, NotesEditorRef } from "@/components/notes-editor";
 import { YouTubePlayer, YouTubePlayerRef } from "@/components/youtube-player";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { useGenerateTranscript } from "@/hooks/use-generate-transcript";
-import { useNote } from "@/hooks/use-notes";
+import { useGetNote, useUpdateNote } from "@/hooks/use-notes";
 import { useGenerateSummary } from "@/hooks/use-generate-summary";
 import { Spinner } from "@/components/ui/spinner";
 
-interface TranscriptionEditorProps {
-  url: string | null;
-}
-
-export function TranscriptionEditor({
-  url: initialUrl,
-}: TranscriptionEditorProps) {
+export function TranscriptionEditor() {
   const playerRef = useRef<YouTubePlayerRef>(null);
   const editorRef = useRef<NotesEditorRef>(null);
-  const [currentUrl, setCurrentUrl] = useState(initialUrl ?? "");
+  const [currentUrl, setCurrentUrl] = useState("");
   const [currentTime, setCurrentTime] = useState(0);
 
   const sidebarContext = useSidebar();
@@ -46,18 +40,21 @@ export function TranscriptionEditor({
     isPending: isSummaryPending,
     data: summaryData,
   } = useGenerateSummary();
-  const { data: note } = useNote(params.id);
+  const { data: note } = useGetNote(params.id);
+  const { mutate: updateNote } = useUpdateNote();
 
   useEffect(() => {
-    if (initialUrl) {
-      generateTranscript({ url: initialUrl });
+    if (note) {
+      setCurrentUrl(note.videoUrl);
+      generateTranscript({ url: note.videoUrl });
     }
-  }, [initialUrl, generateTranscript]);
+  }, [note, generateTranscript]);
 
   const handleSubmit = (e: React.FormEvent) => {
     if (currentUrl) {
       e.preventDefault();
       generateTranscript({ url: currentUrl });
+      updateNote({ id: params.id, videoUrl: currentUrl });
     }
   };
 

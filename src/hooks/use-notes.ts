@@ -57,7 +57,7 @@ export function useGetNotes() {
   });
 }
 
-export function useNote(id: string) {
+export function useGetNote(id: string) {
   return useQuery<GetNoteResponseType, Error>({
     queryKey: ["notes", id],
     queryFn: async () => {

@@ -10,12 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-type Transcript = {
-  text: string;
-  duration: number;
-  offset: number;
-};
-
 interface TranscriptViewerProps {
   transcript: {
     text: string;
