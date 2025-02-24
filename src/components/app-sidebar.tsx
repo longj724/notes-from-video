@@ -41,8 +41,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useGetTranscript } from "@/hooks/use-get-transcriptions";
-import { useGenerateSummary } from "@/hooks/use-generate-summary";
 import {
   useGetNotes,
   useCreateNote,

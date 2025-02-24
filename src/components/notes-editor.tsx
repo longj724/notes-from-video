@@ -1,7 +1,7 @@
 "use client";
 
 // External Dependencies
-import { forwardRef, useImperativeHandle, useEffect } from "react";
+import { forwardRef, useImperativeHandle, useEffect, useCallback } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -20,7 +20,7 @@ import {
   List,
   ListOrdered,
 } from "lucide-react";
-
+import _ from "lodash";
 // Internal Dependencies
 import { Card } from "./ui/card";
 import {
@@ -32,6 +32,10 @@ import {
 } from "./ui/select";
 import { Toggle } from "./ui/toggle";
 import { Timestamp } from "./extensions/timestamp";
+import { useUpdateNote } from "@/hooks/use-notes";
+import { Note } from "@/lib/types";
+
+const DEBOUNCE_MS = 1000;
 
 // Create a custom extension for tab support
 const TabKeyExtension = Extension.create({
@@ -96,11 +100,28 @@ export interface NotesEditorRef {
 interface NotesEditorProps {
   onTimestampClick?: (seconds: number) => void;
   initialContent?: string;
-  onChange?: (content: string) => void;
+  note?: Note;
 }
 
 export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
-  function NotesEditor({ onTimestampClick, initialContent, onChange }, ref) {
+  function NotesEditor({ onTimestampClick, initialContent, note }, ref) {
+    const { mutate: updateNote } = useUpdateNote();
+    const debouncedUpdateNote = useCallback(
+      _.debounce((noteId: string, content: string) => {
+        updateNote({
+          id: noteId,
+          content,
+        });
+      }, DEBOUNCE_MS),
+      [updateNote],
+    );
+
+    const onContentChange = (content: string) => {
+      if (note) {
+        debouncedUpdateNote(note.id, content);
+      }
+    };
+
     const editor = useEditor({
       extensions: [
         StarterKit.configure({
@@ -147,7 +168,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
         },
       },
       onUpdate: ({ editor }) => {
-        onChange?.(editor.getHTML());
+        onContentChange(editor.getHTML());
       },
     });
 
@@ -275,7 +296,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
               <UnderlineIcon className="h-4 w-4" />
             </Toggle>
 
-            <div className="bg-border mx-2 h-4 w-[1px]" />
+            <div className="mx-2 h-4 w-[1px] bg-border" />
 
             <Toggle
               size="sm"
@@ -301,7 +322,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
               <AlignRight className="h-4 w-4" />
             </Toggle>
 
-            <div className="bg-border mx-2 h-4 w-[1px]" />
+            <div className="mx-2 h-4 w-[1px] bg-border" />
 
             <Toggle
               size="sm"

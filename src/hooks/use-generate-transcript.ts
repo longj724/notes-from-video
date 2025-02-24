@@ -14,7 +14,7 @@ export type ResponseType = InferResponseType<
   200
 >;
 
-export function useGetTranscript() {
+export function useGenerateTranscript() {
   return useMutation<ResponseType, Error, RequestType>({
     mutationFn: async (json) => {
       const response = await client.api.transcriptions.$post({

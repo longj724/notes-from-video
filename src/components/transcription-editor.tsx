@@ -1,9 +1,11 @@
 "use client";
 
 // External Dependencies
-import { useRef, useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import _ from "lodash";
+import { useParams } from "next/navigation";
 
 // Internal Dependencies
 import { Card } from "@/components/ui/card";
@@ -14,55 +16,50 @@ import { TranscriptViewer } from "@/components/transcript-viewer";
 import { NotesEditor, NotesEditorRef } from "@/components/notes-editor";
 import { YouTubePlayer, YouTubePlayerRef } from "@/components/youtube-player";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
+import { useGenerateTranscript } from "@/hooks/use-generate-transcript";
+import { useNote } from "@/hooks/use-notes";
+import { useGenerateSummary } from "@/hooks/use-generate-summary";
+import { Spinner } from "@/components/ui/spinner";
 
 interface TranscriptionEditorProps {
-  url: string;
-  onUrlChange?: (url: string) => void;
-  onSubmit: (e: React.FormEvent) => void;
-  isPending: boolean;
-  videoId?: string;
-  transcript?: {
-    text: string;
-    duration: number;
-    offset: number;
-    isMatch?: boolean;
-    matchCount?: number;
-  }[];
-  summaryData?: { summary: string };
-  isSummaryPending?: boolean;
-  onGenerateSummary?: () => void;
-  initialContent?: string;
-  onContentChange?: (content: string) => void;
+  url: string | null;
 }
 
 export function TranscriptionEditor({
   url: initialUrl,
-  onUrlChange,
-  onSubmit,
-  isPending,
-  videoId,
-  transcript,
-  summaryData,
-  isSummaryPending,
-  onGenerateSummary,
-  initialContent,
-  onContentChange,
 }: TranscriptionEditorProps) {
   const playerRef = useRef<YouTubePlayerRef>(null);
   const editorRef = useRef<NotesEditorRef>(null);
-  const [localUrl, setLocalUrl] = useState(initialUrl);
+  const [currentUrl, setCurrentUrl] = useState(initialUrl ?? "");
   const [currentTime, setCurrentTime] = useState(0);
 
   const sidebarContext = useSidebar();
+  const params = useParams<{ id: string }>();
+
+  const {
+    mutate: generateTranscript,
+    isPending: isTranscriptPending,
+    data: transcriptData,
+  } = useGenerateTranscript();
+  const {
+    mutate: generateSummary,
+    isPending: isSummaryPending,
+    data: summaryData,
+  } = useGenerateSummary();
+  const { data: note } = useNote(params.id);
 
   useEffect(() => {
-    setLocalUrl(initialUrl);
-  }, [initialUrl]);
+    console.log("initialUrl", initialUrl);
+    if (initialUrl) {
+      generateTranscript({ url: initialUrl });
+    }
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onUrlChange?.(localUrl);
-    onSubmit(e);
+    if (currentUrl) {
+      e.preventDefault();
+      generateTranscript({ url: currentUrl });
+    }
   };
 
   const handleAddNote = (text: string, timestamp: number) => {
@@ -77,37 +74,43 @@ export function TranscriptionEditor({
     setCurrentTime(time);
   };
 
+  const handleGenerateSummary = () => {
+    if (transcriptData?.transcript) {
+      generateSummary({ transcript: transcriptData.transcript });
+    }
+  };
+
   return (
     <div className="container py-8">
       <form onSubmit={handleSubmit} className="mb-8 flex gap-2">
         <Input
           type="url"
           placeholder="Enter YouTube URL..."
-          value={localUrl}
-          onChange={(e) => setLocalUrl(e.target.value)}
+          value={currentUrl}
+          onChange={(e) => setCurrentUrl(e.target.value)}
           className="flex-1"
         />
-        <Button type="submit" disabled={isPending}>
-          {isPending ? "Loading..." : "Get Transcript"}
+        <Button type="submit" disabled={isTranscriptPending}>
+          {isTranscriptPending ? <Spinner /> : "Get Transcript"}
         </Button>
       </form>
 
       <div className="grid grid-cols-2 gap-8">
         {/* Left Column: Video and Transcript */}
         <div className="space-y-4">
-          {videoId && (
+          {transcriptData?.videoId && (
             <Card className="p-4">
               <YouTubePlayer
                 ref={playerRef}
-                videoId={videoId}
+                videoId={transcriptData.videoId}
                 onTimeUpdate={handleTimeUpdate}
               />
             </Card>
           )}
 
-          {transcript && (
+          {transcriptData?.transcript && (
             <TranscriptViewer
-              transcript={transcript}
+              transcript={transcriptData.transcript}
               onAddNote={handleAddNote}
               onTimeClick={handleTimestampClick}
               currentTime={currentTime}
@@ -126,16 +129,15 @@ export function TranscriptionEditor({
               <NotesEditor
                 ref={editorRef}
                 onTimestampClick={handleTimestampClick}
-                initialContent={initialContent}
-                onChange={onContentChange}
+                note={note}
               />
             </TabsContent>
             <TabsContent value="summary">
               <Card className="p-4">
-                {transcript ? (
+                {transcriptData?.transcript ? (
                   <div className="space-y-4">
                     <Button
-                      onClick={onGenerateSummary}
+                      onClick={handleGenerateSummary}
                       disabled={isSummaryPending ?? summaryData !== undefined}
                       className="w-full"
                     >

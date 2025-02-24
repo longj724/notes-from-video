@@ -5,16 +5,10 @@ import { InferResponseType, InferRequestType } from "hono";
 // Internal Dependencies
 import { client } from "@/lib/hono";
 
-type GetNotesRequestType = InferRequestType<(typeof client.api.notes)["$get"]>;
-
 type GetNotesResponseType = InferResponseType<
   (typeof client.api.notes)["$get"],
   200
 >;
-
-type GetNoteRequestType = InferRequestType<
-  (typeof client.api.notes)[":id"]["$get"]
->["param"];
 
 type GetNoteResponseType = InferResponseType<
   (typeof client.api.notes)[":id"]["$get"],
