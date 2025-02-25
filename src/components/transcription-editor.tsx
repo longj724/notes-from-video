@@ -78,7 +78,8 @@ export function TranscriptionEditor() {
 
   return (
     <div className="container py-8">
-      <form onSubmit={handleSubmit} className="mb-8 flex gap-2">
+      <form onSubmit={handleSubmit} className="mb-8 flex items-center gap-2">
+        {!sidebarContext.open && <SidebarTrigger />}
         <Input
           type="url"
           placeholder="Enter YouTube URL..."
