@@ -15,11 +15,11 @@ type GetNoteResponseType = InferResponseType<
   200
 >;
 
-type CreateNotesRequestType = InferRequestType<
+type CreateNoteRequestType = InferRequestType<
   (typeof client.api.notes)["$post"]
 >["json"];
 
-type CreateNotesResponseType = InferResponseType<
+type CreateNoteResponseType = InferResponseType<
   (typeof client.api.notes)["$post"],
   200
 >;
@@ -93,7 +93,7 @@ export function useGetNote(id: string) {
 export function useCreateNote() {
   const queryClient = useQueryClient();
 
-  return useMutation<CreateNotesResponseType, Error, CreateNotesRequestType>({
+  return useMutation<CreateNoteResponseType, Error, CreateNoteRequestType>({
     mutationFn: async (json) => {
       const response = await client.api.notes.$post({
         json,
@@ -103,7 +103,7 @@ export function useCreateNote() {
         throw new Error("Failed to create note");
       }
 
-      return response.json();
+      return await response.json();
     },
     onSuccess: (_, variables) => {
       void queryClient.invalidateQueries({ queryKey: ["notes"] });

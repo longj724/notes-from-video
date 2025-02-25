@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import _ from "lodash";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 // Internal Dependencies
 import { Card } from "@/components/ui/card";
@@ -17,7 +17,7 @@ import { NotesEditor, NotesEditorRef } from "@/components/notes-editor";
 import { YouTubePlayer, YouTubePlayerRef } from "@/components/youtube-player";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { useGenerateTranscript } from "@/hooks/use-generate-transcript";
-import { useGetNote, useUpdateNote } from "@/hooks/use-notes";
+import { useCreateNote, useGetNote, useUpdateNote } from "@/hooks/use-notes";
 import { useGenerateSummary } from "@/hooks/use-generate-summary";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -29,6 +29,7 @@ export function TranscriptionEditor() {
 
   const sidebarContext = useSidebar();
   const params = useParams<{ id: string }>();
+  const router = useRouter();
 
   const {
     mutate: generateTranscript,
@@ -42,6 +43,7 @@ export function TranscriptionEditor() {
   } = useGenerateSummary();
   const { data: note } = useGetNote(params.id);
   const { mutate: updateNote } = useUpdateNote();
+  const { mutateAsync: createNote, data: newNote } = useCreateNote();
 
   useEffect(() => {
     if (note) {
@@ -50,13 +52,28 @@ export function TranscriptionEditor() {
     }
   }, [note, generateTranscript]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     if (currentUrl) {
       e.preventDefault();
       generateTranscript({ url: currentUrl });
-      updateNote({ id: params.id, videoUrl: currentUrl });
+
+      if (params.id) {
+        updateNote({ id: params.id, videoUrl: currentUrl });
+      } else {
+        await createNote({
+          title: "Test",
+          videoUrl: currentUrl,
+          content: "",
+        });
+      }
     }
   };
+
+  useEffect(() => {
+    if (newNote) {
+      router.push(`/notes/${newNote?.note?.id}`);
+    }
+  }, [newNote, router]);
 
   const handleAddNote = (text: string, timestamp: number) => {
     editorRef.current?.insertTextWithTimestamp(text, timestamp);
@@ -95,6 +112,12 @@ export function TranscriptionEditor() {
       <div className="grid grid-cols-2 gap-8">
         {/* Left Column: Video and Transcript */}
         <div className="space-y-4">
+          {!transcriptData?.videoId && (
+            <p className="text-center text-muted-foreground">
+              Enter a URL to generate a transcript
+            </p>
+          )}
+
           {transcriptData?.videoId && (
             <Card className="p-4">
               <YouTubePlayer

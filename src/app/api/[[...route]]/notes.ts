@@ -61,7 +61,7 @@ const app = new Hono()
   .post("/", zValidator("json", createNoteSchema), async (c) => {
     const data = c.req.valid("json");
     const newNote = await db.insert(notes).values(data).returning();
-    return c.json(newNote[0]);
+    return c.json({ note: newNote[0] });
   })
   .put("/:id", zValidator("json", updateNoteSchema), async (c) => {
     const id = c.req.param("id");
