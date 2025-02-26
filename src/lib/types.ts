@@ -11,4 +11,5 @@ export type Note = {
   videoUrl: string;
   createdAt: string;
   folderId: string | null;
+  content: string | null;
 };

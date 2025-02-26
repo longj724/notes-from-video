@@ -122,9 +122,9 @@ export function useUpdateNote() {
   return useMutation<
     UpdateNotesResponseType,
     Error,
-    { id: string } & UpdateNotesRequestType
+    { id: string; skipInvalidation?: boolean } & UpdateNotesRequestType
   >({
-    mutationFn: async ({ id, ...json }) => {
+    mutationFn: async ({ id, skipInvalidation, ...json }) => {
       const response = await client.api.notes[":id"].$put({
         json,
         param: { id },
@@ -137,11 +137,13 @@ export function useUpdateNote() {
       return response.json();
     },
     onSuccess: (_, variables) => {
-      void queryClient.invalidateQueries({ queryKey: ["notes"] });
-      if (variables.folderId) {
-        void queryClient.invalidateQueries({
-          queryKey: ["notes", "folder", variables.folderId],
-        });
+      if (!variables.skipInvalidation) {
+        void queryClient.invalidateQueries({ queryKey: ["notes"] });
+        if (variables.folderId) {
+          void queryClient.invalidateQueries({
+            queryKey: ["notes", "folder", variables.folderId],
+          });
+        }
       }
     },
   });

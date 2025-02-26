@@ -21,6 +21,7 @@ import {
   ListOrdered,
 } from "lucide-react";
 import _ from "lodash";
+
 // Internal Dependencies
 import { Card } from "./ui/card";
 import {
@@ -32,6 +33,7 @@ import {
 } from "./ui/select";
 import { Toggle } from "./ui/toggle";
 import { Timestamp } from "./extensions/timestamp";
+import { AISuggestion } from "./extensions/ai-suggestion";
 import { useUpdateNote } from "@/hooks/use-notes";
 import { Note } from "@/lib/types";
 
@@ -99,18 +101,18 @@ export interface NotesEditorRef {
 
 interface NotesEditorProps {
   onTimestampClick?: (seconds: number) => void;
-  initialContent?: string;
   note?: Note;
 }
 
 export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
-  function NotesEditor({ onTimestampClick, initialContent, note }, ref) {
+  function NotesEditor({ onTimestampClick, note }, ref) {
     const { mutate: updateNote } = useUpdateNote();
     const debouncedUpdateNote = useCallback(
       _.debounce((noteId: string, content: string) => {
         updateNote({
           id: noteId,
           content,
+          skipInvalidation: true,
         });
       }, DEBOUNCE_MS),
       [updateNote],
@@ -121,6 +123,11 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
         debouncedUpdateNote(note.id, content);
       }
     };
+
+    const handleAICommand = useCallback((command: string) => {
+      // TODO: Implement AI command handling
+      console.log("AI Command:", command);
+    }, []);
 
     const editor = useEditor({
       extensions: [
@@ -159,8 +166,11 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
           HTMLAttributes: {},
           onClick: onTimestampClick,
         }),
+        AISuggestion.configure({
+          onAICommand: handleAICommand,
+        }),
       ],
-      content: initialContent ?? "",
+      content: note?.content ?? "",
       editorProps: {
         attributes: {
           class:
@@ -173,12 +183,12 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
     });
 
     useEffect(() => {
-      if (editor && initialContent !== undefined) {
-        if (editor.getHTML() !== initialContent) {
-          editor.commands.setContent(initialContent);
+      if (editor && note?.content !== undefined) {
+        if (editor.getHTML() !== note?.content) {
+          editor.commands.setContent(note?.content);
         }
       }
-    }, [editor, initialContent]);
+    }, [editor, note]);
 
     useImperativeHandle(ref, () => ({
       insertTextWithTimestamp: (text: string, timestamp: number) => {
