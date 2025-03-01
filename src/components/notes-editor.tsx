@@ -7,6 +7,7 @@ import {
   useEffect,
   useCallback,
   useState,
+  useRef,
 } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -26,8 +27,10 @@ import {
   List,
   ListOrdered,
   Bot,
+  Loader2,
 } from "lucide-react";
 import _ from "lodash";
+import { marked } from "marked";
 
 // Internal Dependencies
 import { Card } from "./ui/card";
@@ -123,7 +126,11 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
       top: 0,
       left: 0,
     });
-    const { mutate: askQuestion, data: questionResponse } = useAskQuestion();
+    const {
+      mutate: askAIQuestion,
+      data: aiResponse,
+      isPending: isAILoading,
+    } = useAskQuestion();
 
     const { mutate: updateNote } = useUpdateNote();
 
@@ -146,8 +153,25 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
 
     const handleAICommand = (question: string) => {
       if (transcript) {
-        editor?.chain().focus().insertContent(`Question: ${question}\n`).run();
-        askQuestion({ question, transcript });
+        // Remove the "/ai " text that was added
+        const currentContent = editor?.getHTML();
+        if (currentContent) {
+          const cleanedContent = currentContent.replace(/<p>\/ai\s*<\/p>$/, "");
+          editor?.commands.setContent(cleanedContent);
+        }
+
+        // Add the question with proper formatting and spacing
+        editor
+          ?.chain()
+          .focus()
+          .createParagraphNear()
+          .insertContent("\n\n") // Add extra spacing before question
+          .insertContent("💭 Question: ")
+          .insertContent(question)
+          .insertContent("\n") // Add line break after question
+          .run();
+
+        askAIQuestion({ question, transcript });
         setShowAICommand(false);
       }
     };
@@ -158,17 +182,22 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
           StarterKit.configure({
             bulletList: {
               HTMLAttributes: {
-                class: "list-disc list-outside leading-3 ml-4",
+                class: "list-disc list-outside leading-4 ml-4",
               },
             },
             orderedList: {
               HTMLAttributes: {
-                class: "list-decimal list-outside leading-3 ml-4",
+                class: "list-decimal list-outside leading-4 ml-4",
               },
             },
             listItem: {
               HTMLAttributes: {
                 class: "my-2",
+              },
+            },
+            paragraph: {
+              HTMLAttributes: {
+                class: "leading-4 my-4",
               },
             },
           }),
@@ -198,7 +227,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
         editorProps: {
           attributes: {
             class:
-              "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none",
+              "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none [&_p]:leading-4 space-y-4",
           },
         },
         onUpdate: ({ editor }) => {
@@ -217,18 +246,36 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
     }, [editor, note]);
 
     useEffect(() => {
-      if (editor && questionResponse?.answer) {
-        // Insert two newlines and the AI response
-        editor
-          .chain()
-          .focus()
-          .createParagraphNear()
-          .insertContent("\n")
-          .insertContent("AI Response: ")
-          .insertContent(questionResponse.answer)
-          .run();
+      if (editor && aiResponse?.answer) {
+        try {
+          // Convert markdown to HTML
+          const htmlContent = marked.parse(aiResponse.answer);
+
+          // Insert the response with proper formatting and spacing
+          editor
+            .chain()
+            .focus()
+            .createParagraphNear()
+            .insertContent("\n") // Add extra spacing before answer
+            .insertContent("🤖 Answer:\n")
+            .insertContent(htmlContent)
+            .insertContent("\n") // Add extra spacing after answer
+            .run();
+        } catch (error) {
+          console.error("Error parsing markdown:", error);
+          // Fallback to plain text if markdown parsing fails
+          editor
+            .chain()
+            .focus()
+            .createParagraphNear()
+            .insertContent("\n\n")
+            .insertContent("🤖 Answer:\n")
+            .insertContent(aiResponse.answer)
+            .insertContent("\n\n")
+            .run();
+        }
       }
-    }, [editor, questionResponse]);
+    }, [editor, aiResponse]);
 
     useImperativeHandle(ref, () => ({
       insertTextWithTimestamp: (text: string, timestamp: number) => {
@@ -439,6 +486,16 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
               onSubmit={handleAICommand}
               onClose={() => setShowAICommand(false)}
             />
+          </div>
+        )}
+
+        {isAILoading && (
+          <div
+            contentEditable={false}
+            className="inline-flex items-center gap-2 rounded-md bg-muted/50 px-2 py-1 text-sm text-muted-foreground"
+          >
+            <Loader2 className="h-3 w-3 animate-spin" />
+            AI is thinking...
           </div>
         )}
       </Card>
