@@ -66,7 +66,6 @@ const app = new Hono()
       const prompt = `Please provide a comprehensive summary of the following video transcript. Focus on the main points, key ideas, and important details. Make it clear and concise: ${fullText}`;
 
       const result = await model.generateContent(prompt);
-      console.log("result", result);
       const response = result.response;
       const summary = response.text();
 
@@ -93,8 +92,6 @@ const app = new Hono()
       const response = result.response;
       const answer = response.text();
 
-      console.log("answer is", answer);
-
       return c.json({ answer });
     } catch (error) {
       console.error("Error generating answer:", error);
@@ -103,10 +100,7 @@ const app = new Hono()
   });
 
 const decodeHTMLEntities = (text: string): string => {
-  text = text.replace(/&amp;/g, "&");
-  const textarea = document.createElement("textarea");
-  textarea.innerHTML = text;
-  return textarea.value;
+  return text.replace(/&amp;/g, "&");
 };
 
 export default app;

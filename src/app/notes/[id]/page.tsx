@@ -3,12 +3,12 @@
 // External Dependencies
 
 // Internal Dependencies
-import { TranscriptionEditor } from "@/components/transcription-editor";
+import NoteDashboard from "@/components/note-dashboard";
 
 const NotePage = () => {
   return (
     <div className="flex min-h-screen w-full">
-      <TranscriptionEditor />
+      <NoteDashboard />
     </div>
   );
 };

@@ -21,7 +21,6 @@ import {
   ListOrdered,
 } from "lucide-react";
 import _ from "lodash";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 // Internal Dependencies
 import { Card } from "./ui/card";
@@ -38,7 +37,6 @@ import { AISuggestion } from "./extensions/ai-suggestion";
 import { useUpdateNote } from "@/hooks/use-notes";
 import { Note, Transcription } from "@/lib/types";
 import { useAskQuestion } from "@/hooks/use-ask-question";
-
 const DEBOUNCE_MS = 1000;
 
 // Create a custom extension for tab support
@@ -104,22 +102,13 @@ export interface NotesEditorRef {
 interface NotesEditorProps {
   onTimestampClick?: (seconds: number) => void;
   note?: Note;
+  transcript?: Transcription[];
 }
 
 export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
-  function NotesEditor({ onTimestampClick, note }, ref) {
-    const queryClient = useQueryClient();
+  function NotesEditor({ onTimestampClick, note, transcript }, ref) {
     const { mutate: askQuestion, data: questionResponse } = useAskQuestion();
-    const { data: transcript } = useQuery<Transcription[] | null>({
-      queryKey: ["current-transcription"],
-      // This function won't run if data is already in the cache
-      queryFn: () => Promise.resolve(null),
-      // Prevent refetching
-      staleTime: Infinity,
-      // Only run the query if we have data in the cache
-      enabled:
-        queryClient.getQueryData(["current-transcription"]) !== undefined,
-    });
+
     const { mutate: updateNote } = useUpdateNote();
 
     const debouncedUpdateNote = useCallback(
@@ -139,69 +128,67 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
       }
     };
 
-    const handleAICommand = useCallback(
-      (question: string) => {
-        console.log("question", question);
-        console.log("transcript", transcript);
-        if (transcript) {
-          askQuestion({ question, transcript });
-        }
-      },
-      [transcript, askQuestion],
-    );
+    const handleAICommand = (question: string) => {
+      if (transcript) {
+        askQuestion({ question, transcript });
+      }
+    };
 
-    const editor = useEditor({
-      extensions: [
-        StarterKit.configure({
-          bulletList: {
-            HTMLAttributes: {
-              class: "list-disc list-outside leading-3 ml-4",
+    const editor = useEditor(
+      {
+        extensions: [
+          StarterKit.configure({
+            bulletList: {
+              HTMLAttributes: {
+                class: "list-disc list-outside leading-3 ml-4",
+              },
             },
-          },
-          orderedList: {
-            HTMLAttributes: {
-              class: "list-decimal list-outside leading-3 ml-4",
+            orderedList: {
+              HTMLAttributes: {
+                class: "list-decimal list-outside leading-3 ml-4",
+              },
             },
-          },
-          listItem: {
-            HTMLAttributes: {
-              class: "my-2",
+            listItem: {
+              HTMLAttributes: {
+                class: "my-2",
+              },
             },
+          }),
+          Underline,
+          TextAlign.configure({
+            types: ["heading", "paragraph", "listItem"],
+            alignments: ["left", "center", "right"],
+            defaultAlignment: "left",
+          }),
+          TextStyle,
+          FontFamily.configure({
+            types: ["textStyle"],
+          }),
+          FontSize.configure({
+            types: ["textStyle"],
+          }),
+          TabKeyExtension,
+          Timestamp.configure({
+            HTMLAttributes: {},
+            onClick: onTimestampClick,
+          }),
+          AISuggestion.configure({
+            onAICommand: handleAICommand,
+          }),
+        ],
+        content: note?.content ?? "",
+        editorProps: {
+          attributes: {
+            class:
+              "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none",
           },
-        }),
-        Underline,
-        TextAlign.configure({
-          types: ["heading", "paragraph", "listItem"],
-          alignments: ["left", "center", "right"],
-          defaultAlignment: "left",
-        }),
-        TextStyle,
-        FontFamily.configure({
-          types: ["textStyle"],
-        }),
-        FontSize.configure({
-          types: ["textStyle"],
-        }),
-        TabKeyExtension,
-        Timestamp.configure({
-          HTMLAttributes: {},
-          onClick: onTimestampClick,
-        }),
-        AISuggestion.configure({
-          onAICommand: handleAICommand,
-        }),
-      ],
-      content: note?.content ?? "",
-      editorProps: {
-        attributes: {
-          class:
-            "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none",
+        },
+        onUpdate: ({ editor }) => {
+          onContentChange(editor.getHTML());
         },
       },
-      onUpdate: ({ editor }) => {
-        onContentChange(editor.getHTML());
-      },
-    });
+      [transcript],
+    );
 
     useEffect(() => {
       if (editor && note?.content !== undefined) {
@@ -210,6 +197,20 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
         }
       }
     }, [editor, note]);
+
+    useEffect(() => {
+      if (editor && questionResponse?.answer) {
+        // Insert two newlines and the AI response
+        editor
+          .chain()
+          .focus()
+          .createParagraphNear()
+          .insertContent("\n")
+          .insertContent("AI Response: ")
+          .insertContent(questionResponse.answer)
+          .run();
+      }
+    }, [editor, questionResponse]);
 
     useImperativeHandle(ref, () => ({
       insertTextWithTimestamp: (text: string, timestamp: number) => {

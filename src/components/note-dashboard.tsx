@@ -21,7 +21,7 @@ import { useCreateNote, useGetNote, useUpdateNote } from "@/hooks/use-notes";
 import { useGenerateSummary } from "@/hooks/use-generate-summary";
 import { Spinner } from "@/components/ui/spinner";
 
-export function TranscriptionEditor() {
+const NoteDashboard = () => {
   const playerRef = useRef<YouTubePlayerRef>(null);
   const editorRef = useRef<NotesEditorRef>(null);
   const [currentUrl, setCurrentUrl] = useState("");
@@ -150,6 +150,7 @@ export function TranscriptionEditor() {
                 ref={editorRef}
                 onTimestampClick={handleTimestampClick}
                 note={note}
+                transcript={transcriptData?.transcript}
               />
             </TabsContent>
             <TabsContent value="summary">
@@ -185,4 +186,6 @@ export function TranscriptionEditor() {
       </div>
     </div>
   );
-}
+};
+
+export default NoteDashboard;
