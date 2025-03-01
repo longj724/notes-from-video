@@ -3,6 +3,7 @@ import { useState, useMemo, useRef, useEffect, memo } from "react";
 import { ChevronUp, ChevronDown, X, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { useDebouncedCallback } from "use-debounce";
+import { cn } from "@/lib/utils";
 
 // Relative Dependencies
 import { Card } from "@/components/ui/card";
@@ -70,13 +71,13 @@ const TranscriptSegment = memo(function TranscriptSegment({
 
   return (
     <div
-      className={`group flex items-center gap-2 rounded-md p-2 transition-colors ${
-        segment.isMatch ? "bg-yellow-50 dark:bg-yellow-900/20" : ""
-      } ${
+      className={cn(
+        "group flex items-center gap-2 rounded-md p-2 transition-all duration-200",
+        segment.isMatch ? "bg-yellow-50 dark:bg-yellow-900/20" : "",
         isCurrentSegment
-          ? "bg-blue-100 shadow-sm dark:bg-blue-900/40"
-          : "hover:bg-muted/50"
-      }`}
+          ? "bg-blue-100 shadow-sm ring-2 ring-blue-400 dark:bg-blue-900/40 dark:ring-blue-500"
+          : "hover:bg-muted/50",
+      )}
     >
       <span className="text-sm text-muted-foreground">
         {formatTime(Math.round(segment.offset))}
@@ -138,7 +139,7 @@ export function TranscriptViewer({
     });
   }, [transcript, currentTime]);
 
-  // Auto-scroll to current segment with a smooth animation
+  // Enhanced auto-scroll behavior
   useEffect(() => {
     if (
       currentSegmentIndex === -1 ||
@@ -154,12 +155,25 @@ export function TranscriptViewer({
 
     const viewportHeight = viewportRef.current.clientHeight;
     const segmentTop = segmentElement.offsetTop;
-    const targetScroll = Math.max(0, segmentTop - viewportHeight * 0.2); // Position segment 20% from the top
+    const segmentHeight = segmentElement.offsetHeight;
+    const currentScroll = viewportRef.current.scrollTop;
+    const buffer = viewportHeight * 0.3; // 30% buffer zone
 
-    viewportRef.current.scrollTo({
-      top: targetScroll,
-      behavior: "smooth",
-    });
+    // Only scroll if the segment is outside the visible area with buffer
+    if (
+      segmentTop < currentScroll + buffer ||
+      segmentTop + segmentHeight > currentScroll + viewportHeight - buffer
+    ) {
+      const targetScroll = Math.max(
+        0,
+        segmentTop - viewportHeight / 2 + segmentHeight / 2,
+      );
+
+      viewportRef.current.scrollTo({
+        top: targetScroll,
+        behavior: "smooth",
+      });
+    }
   }, [currentSegmentIndex]);
 
   const handleCopyTranscript = () => {
