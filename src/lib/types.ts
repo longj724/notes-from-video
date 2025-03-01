@@ -13,3 +13,9 @@ export type Note = {
   folderId: string | null;
   content: string | null;
 };
+
+export type Transcription = {
+  text: string;
+  duration: number;
+  offset: number;
+};

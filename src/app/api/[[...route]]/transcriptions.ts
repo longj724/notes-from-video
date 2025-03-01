@@ -5,7 +5,7 @@ import { zValidator } from "@hono/zod-validator";
 import { YoutubeTranscript } from "youtube-transcript";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Relative Dependencies
+// Internal Dependencies
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY ?? "");
 
@@ -57,7 +57,9 @@ const app = new Hono()
     try {
       const { transcript } = c.req.valid("json");
 
-      const fullText = transcript.map((segment) => segment.text).join(" ");
+      const fullText = transcript
+        .map((segment) => decodeHTMLEntities(segment.text))
+        .join(" ");
 
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
@@ -78,8 +80,12 @@ const app = new Hono()
     try {
       const { question, transcript } = c.req.valid("json");
 
-      const fullText = transcript.map((segment) => segment.text).join(" ");
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+      const fullText = transcript
+        .map((segment) => decodeHTMLEntities(segment.text))
+        .join(" ");
+      const model = genAI.getGenerativeModel({
+        model: "gemini-2.0-flash-lite",
+      });
 
       const prompt = `Given the following video transcript, please answer this question: "${question}"\n\nTranscript: ${fullText}`;
 
@@ -87,11 +93,20 @@ const app = new Hono()
       const response = result.response;
       const answer = response.text();
 
+      console.log("answer is", answer);
+
       return c.json({ answer });
     } catch (error) {
       console.error("Error generating answer:", error);
       return c.json({ error: "Failed to generate answer" }, 500);
     }
   });
+
+const decodeHTMLEntities = (text: string): string => {
+  text = text.replace(/&amp;/g, "&");
+  const textarea = document.createElement("textarea");
+  textarea.innerHTML = text;
+  return textarea.value;
+};
 
 export default app;

@@ -1,6 +1,6 @@
 // External Dependencies
 import { InferResponseType, InferRequestType } from "hono";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 // Internal Dependencies
 import { client } from "@/lib/hono";
@@ -15,6 +15,8 @@ export type ResponseType = InferResponseType<
 >;
 
 export function useGenerateTranscript() {
+  const queryClient = useQueryClient();
+
   return useMutation<ResponseType, Error, RequestType>({
     mutationFn: async (json) => {
       const response = await client.api.transcriptions.$post({
@@ -26,6 +28,10 @@ export function useGenerateTranscript() {
       }
 
       return await response.json();
+    },
+    onSuccess: (data) => {
+      console.log("setting data", data);
+      queryClient.setQueryData(["current-transcription"], data.transcript);
     },
   });
 }

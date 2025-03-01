@@ -21,6 +21,7 @@ import {
   ListOrdered,
 } from "lucide-react";
 import _ from "lodash";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 // Internal Dependencies
 import { Card } from "./ui/card";
@@ -35,7 +36,8 @@ import { Toggle } from "./ui/toggle";
 import { Timestamp } from "./extensions/timestamp";
 import { AISuggestion } from "./extensions/ai-suggestion";
 import { useUpdateNote } from "@/hooks/use-notes";
-import { Note } from "@/lib/types";
+import { Note, Transcription } from "@/lib/types";
+import { useAskQuestion } from "@/hooks/use-ask-question";
 
 const DEBOUNCE_MS = 1000;
 
@@ -106,7 +108,20 @@ interface NotesEditorProps {
 
 export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
   function NotesEditor({ onTimestampClick, note }, ref) {
+    const queryClient = useQueryClient();
+    const { mutate: askQuestion, data: questionResponse } = useAskQuestion();
+    const { data: transcript } = useQuery<Transcription[] | null>({
+      queryKey: ["current-transcription"],
+      // This function won't run if data is already in the cache
+      queryFn: () => Promise.resolve(null),
+      // Prevent refetching
+      staleTime: Infinity,
+      // Only run the query if we have data in the cache
+      enabled:
+        queryClient.getQueryData(["current-transcription"]) !== undefined,
+    });
     const { mutate: updateNote } = useUpdateNote();
+
     const debouncedUpdateNote = useCallback(
       _.debounce((noteId: string, content: string) => {
         updateNote({
@@ -124,10 +139,16 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
       }
     };
 
-    const handleAICommand = useCallback((command: string) => {
-      // TODO: Implement AI command handling
-      console.log("AI Command:", command);
-    }, []);
+    const handleAICommand = useCallback(
+      (question: string) => {
+        console.log("question", question);
+        console.log("transcript", transcript);
+        if (transcript) {
+          askQuestion({ question, transcript });
+        }
+      },
+      [transcript, askQuestion],
+    );
 
     const editor = useEditor({
       extensions: [
