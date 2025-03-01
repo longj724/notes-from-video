@@ -7,7 +7,6 @@ import {
   useEffect,
   useCallback,
   useState,
-  useRef,
 } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -320,7 +319,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
     };
 
     return (
-      <Card className="h-full p-4">
+      <Card className="h-[700px] overflow-y-auto p-4">
         <div className="mb-2 border-b pb-2">
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <Select

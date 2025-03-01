@@ -94,8 +94,8 @@ const NoteDashboard = () => {
   };
 
   return (
-    <div className="container py-8">
-      <form onSubmit={handleSubmit} className="mb-8 flex items-center gap-2">
+    <div className="container py-6">
+      <form onSubmit={handleSubmit} className="mb-6 flex items-center gap-2">
         {!sidebarContext.open && <SidebarTrigger />}
         <Input
           type="url"
@@ -119,7 +119,7 @@ const NoteDashboard = () => {
           )}
 
           {transcriptData?.videoId && (
-            <Card className="p-4">
+            <Card className="p-2">
               <YouTubePlayer
                 ref={playerRef}
                 videoId={transcriptData.videoId}

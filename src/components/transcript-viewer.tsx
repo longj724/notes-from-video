@@ -282,7 +282,7 @@ export function TranscriptViewer({
         </Button>
       </div>
 
-      <Card className="h-[calc(100vh-24rem)]" ref={transcriptRef}>
+      <Card className="h-[350px]" ref={transcriptRef}>
         <ScrollArea className="h-full" ref={viewportRef}>
           <div className="space-y-2 p-4" ref={scrollAreaRef}>
             {highlightedTranscript
