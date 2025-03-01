@@ -134,7 +134,7 @@ export const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(
         window.onYouTubeIframeAPIReady = undefined;
         setIsAPIReady(false);
       };
-    }, [videoId]); // Only reinitialize when videoId changes
+    }, [videoId]); // Only reinitialize when videoId changes - ignore the warning here
 
     useImperativeHandle(ref, () => ({
       seekTo: (seconds: number) => {

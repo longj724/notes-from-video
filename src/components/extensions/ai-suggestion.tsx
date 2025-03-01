@@ -86,16 +86,32 @@ export const AISuggestion = Extension.create<AISuggestionOptions>({
                     },
                   });
 
-                  // Remove default tippy background
                   const popperElement = instance.popper;
                   if (popperElement instanceof HTMLElement) {
                     popperElement.style.background = "transparent";
                     popperElement.style.backdropFilter = "none";
+                    // popperElement.style.border = "none";
+                    // popperElement.style.padding = "0";
                     // Apply webkit prefix using setAttribute for cross-browser support
                     popperElement.setAttribute(
                       "style",
                       `${popperElement.getAttribute("style") ?? ""}; -webkit-backdrop-filter: none;`,
                     );
+
+                    // Remove tippy-box styles
+                    const tippyBox = popperElement.querySelector(".tippy-box");
+                    if (tippyBox instanceof HTMLElement) {
+                      tippyBox.style.background = "transparent";
+                      tippyBox.style.border = "none";
+                      tippyBox.style.padding = "0";
+                      tippyBox.style.borderRadius = "12px";
+                    }
+
+                    const tippyContent =
+                      popperElement.querySelector(".tippy-content");
+                    if (tippyContent instanceof HTMLElement) {
+                      tippyContent.style.padding = "0px";
+                    }
                   }
 
                   const root = createRoot(container);
