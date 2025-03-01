@@ -1,29 +1,37 @@
 // External Dependencies
 import { useState, useCallback, useEffect } from "react";
-
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 // Internal Dependencies
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
+import { useAskQuestion } from "@/hooks/use-ask-question";
 
 interface AICommandListProps {
   onSubmit: (command: string) => void;
   onClose: () => void;
 }
 
-export function AICommandList({ onSubmit, onClose }: AICommandListProps) {
-  const [command, setCommand] = useState("");
+interface Transcription {
+  text: string;
+  duration: number;
+  offset: number;
+}
 
-  const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault();
-      if (command.trim()) {
-        onSubmit(command.trim());
-        setCommand("");
-      }
-    },
-    [command, onSubmit],
-  );
+export function AICommandList({ onSubmit, onClose }: AICommandListProps) {
+  const [question, setQuestion] = useState("");
+
+  const queryClient = useQueryClient();
+  const { mutate: askQuestion, data: questionResponse } = useAskQuestion();
+  const { data: transcript } = useQuery<Transcription[] | null>({
+    queryKey: ["current-transcription"],
+    // This function won't run if data is already in the cache
+    queryFn: () => Promise.resolve(null),
+    // Prevent refetching
+    staleTime: Infinity,
+    // Only run the query if we have data in the cache
+    enabled: queryClient.getQueryData(["current-transcription"]) !== undefined,
+  });
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -31,25 +39,29 @@ export function AICommandList({ onSubmit, onClose }: AICommandListProps) {
         onClose();
       }
     };
-
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
+  const handleAskQuestion = () => {
+    if (transcript) {
+      console.log("transcript is", transcript);
+      // askQuestion({ question, transcript });
+    }
+  };
+
   return (
     <Card className="z-50 flex w-[300px] gap-2 border bg-background p-2 shadow-md">
-      {/* <form onSubmit={handleSubmit} className="flex gap-2"> */}
       <Input
-        value={command}
-        onChange={(e) => setCommand(e.target.value)}
+        value={question}
+        onChange={(e) => setQuestion(e.target.value)}
         placeholder="Ask AI..."
         className="flex-1"
         autoFocus
       />
-      <Button type="submit" size="sm">
+      <Button onClick={handleAskQuestion} size="sm">
         Ask
       </Button>
-      {/* </form> */}
     </Card>
   );
 }

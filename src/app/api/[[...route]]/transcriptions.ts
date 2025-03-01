@@ -23,6 +23,17 @@ const summaryRequestSchema = z.object({
   ),
 });
 
+const questionRequestSchema = z.object({
+  question: z.string().min(1),
+  transcript: z.array(
+    z.object({
+      text: z.string(),
+      duration: z.number(),
+      offset: z.number(),
+    }),
+  ),
+});
+
 const app = new Hono()
   .get("/", (c) => {
     return c.json({ message: "Hello, world!" });
@@ -61,6 +72,25 @@ const app = new Hono()
     } catch (error) {
       console.error("Error generating summary:", error);
       return c.json({ error: "Failed to generate summary" }, 500);
+    }
+  })
+  .post("/question", zValidator("json", questionRequestSchema), async (c) => {
+    try {
+      const { question, transcript } = c.req.valid("json");
+
+      const fullText = transcript.map((segment) => segment.text).join(" ");
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+      const prompt = `Given the following video transcript, please answer this question: "${question}"\n\nTranscript: ${fullText}`;
+
+      const result = await model.generateContent(prompt);
+      const response = result.response;
+      const answer = response.text();
+
+      return c.json({ answer });
+    } catch (error) {
+      console.error("Error generating answer:", error);
+      return c.json({ error: "Failed to generate answer" }, 500);
     }
   });
 
