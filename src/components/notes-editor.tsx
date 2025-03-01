@@ -1,7 +1,13 @@
 "use client";
 
 // External Dependencies
-import { forwardRef, useImperativeHandle, useEffect, useCallback } from "react";
+import {
+  forwardRef,
+  useImperativeHandle,
+  useEffect,
+  useCallback,
+  useState,
+} from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -19,6 +25,7 @@ import {
   AlignRight,
   List,
   ListOrdered,
+  Bot,
 } from "lucide-react";
 import _ from "lodash";
 
@@ -32,11 +39,15 @@ import {
   SelectValue,
 } from "./ui/select";
 import { Toggle } from "./ui/toggle";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Dialog, DialogContent, DialogFooter } from "./ui/dialog";
 import { Timestamp } from "./extensions/timestamp";
 import { AISuggestion } from "./extensions/ai-suggestion";
 import { useUpdateNote } from "@/hooks/use-notes";
 import { Note, Transcription } from "@/lib/types";
 import { useAskQuestion } from "@/hooks/use-ask-question";
+import { AICommandList } from "./ai-command-list";
 const DEBOUNCE_MS = 1000;
 
 // Create a custom extension for tab support
@@ -107,6 +118,11 @@ interface NotesEditorProps {
 
 export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
   function NotesEditor({ onTimestampClick, note, transcript }, ref) {
+    const [showAICommand, setShowAICommand] = useState(false);
+    const [aiCommandPosition, setAICommandPosition] = useState({
+      top: 0,
+      left: 0,
+    });
     const { mutate: askQuestion, data: questionResponse } = useAskQuestion();
 
     const { mutate: updateNote } = useUpdateNote();
@@ -130,7 +146,9 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
 
     const handleAICommand = (question: string) => {
       if (transcript) {
+        editor?.chain().focus().insertContent(`Question: ${question}\n`).run();
         askQuestion({ question, transcript });
+        setShowAICommand(false);
       }
     };
 
@@ -377,6 +395,29 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
             >
               <ListOrdered className="h-4 w-4" />
             </Toggle>
+
+            <div className="mx-2 h-4 w-[1px] bg-border" />
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                const { view } = editor;
+                const { top, left } = view.coordsAtPos(
+                  view.state.selection.from,
+                );
+                setAICommandPosition({
+                  top: top + window.scrollY + 24, // Add some padding below cursor
+                  left: left + window.scrollX,
+                });
+                setShowAICommand(true);
+                editor.chain().focus().insertContent("/ai ").run();
+              }}
+              className="gap-2"
+            >
+              <Bot className="h-4 w-4" />
+              Ask AI
+            </Button>
           </div>
         </div>
 
@@ -384,6 +425,22 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
           editor={editor}
           className="min-h-[500px] focus:outline-none"
         />
+
+        {showAICommand && (
+          <div
+            style={{
+              position: "fixed",
+              top: aiCommandPosition.top,
+              left: aiCommandPosition.left,
+              zIndex: 50,
+            }}
+          >
+            <AICommandList
+              onSubmit={handleAICommand}
+              onClose={() => setShowAICommand(false)}
+            />
+          </div>
+        )}
       </Card>
     );
   },
