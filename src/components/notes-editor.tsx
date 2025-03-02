@@ -42,8 +42,6 @@ import {
 } from "./ui/select";
 import { Toggle } from "./ui/toggle";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Dialog, DialogContent, DialogFooter } from "./ui/dialog";
 import { Timestamp } from "./extensions/timestamp";
 import { AISuggestion } from "./extensions/ai-suggestion";
 import { useUpdateNote } from "@/hooks/use-notes";
@@ -457,7 +455,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(
                   left: left + window.scrollX,
                 });
                 setShowAICommand(true);
-                editor.chain().focus().insertContent("/ai ").run();
+                // editor.chain().focus().insertContent("/ai ").run();
               }}
               className="gap-2"
             >

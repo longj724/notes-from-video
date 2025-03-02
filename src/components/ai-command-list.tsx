@@ -32,6 +32,11 @@ export function AICommandList({
       <Input
         value={question}
         onChange={(e) => setQuestion(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Backspace" && question === "") {
+            onClose();
+          }
+        }}
         placeholder="Ask AI..."
         className="flex-1"
         autoFocus
