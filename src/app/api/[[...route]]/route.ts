@@ -7,10 +7,17 @@ import { handle } from "hono/vercel";
 import transcriptions from "./transcriptions";
 import folders from "./folders";
 import notes from "./notes";
+import auth from "./auth";
+import { auth as authClient } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
-const app = new Hono().basePath("/api");
+const app = new Hono<{
+  Variables: {
+    user: typeof authClient.$Infer.Session.user | null;
+    session: typeof authClient.$Infer.Session.session | null;
+  };
+}>().basePath("/api");
 
 app.use(
   "*",
@@ -30,10 +37,27 @@ app.use(
   }),
 );
 
+app.use("*", async (c, next) => {
+  const session = await authClient.api.getSession({
+    headers: c.req.raw.headers,
+  });
+
+  if (!session) {
+    c.set("user", null);
+    c.set("session", null);
+    return next();
+  }
+
+  c.set("user", session.user);
+  c.set("session", session.session);
+  return next();
+});
+
 const routes = app
   .route("/transcriptions", transcriptions)
   .route("/folders", folders)
-  .route("/notes", notes);
+  .route("/notes", notes)
+  .route("/auth", auth);
 
 export const GET = handle(app);
 export const POST = handle(app);
