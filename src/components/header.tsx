@@ -1,9 +1,14 @@
 // External Dependencies
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { useRouter } from "next/router";
+import Link from "next/link";
+
+// Internal Dependencies
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   return (
     <header className="fixed left-0 right-0 top-0 z-50 border-b bg-white/80 backdrop-blur-md">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -24,9 +29,12 @@ export const Header = () => {
             {/* <a href="#pricing" className="text-gray-600 hover:text-gray-900">
               Pricing
             </a> */}
-            <button className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+            <Link
+              className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+              href="/sign-in"
+            >
               Log In
-            </button>
+            </Link>
           </nav>
           <button
             className="md:hidden"

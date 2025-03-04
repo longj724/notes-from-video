@@ -10,6 +10,7 @@ import Link from "next/link";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuAction,
@@ -48,6 +49,7 @@ import {
 } from "@/hooks/use-notes";
 import { Note } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { ProfileFooter } from "./profile-footer";
 
 const AppSidebar = () => {
   const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
@@ -212,6 +214,10 @@ const AppSidebar = () => {
           ))}
         </SidebarMenu>
       </SidebarContent>
+
+      <SidebarFooter>
+        <ProfileFooter />
+      </SidebarFooter>
 
       <Dialog
         open={noteToDelete !== null}
